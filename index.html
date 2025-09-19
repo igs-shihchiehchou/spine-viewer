@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spine Viewer</title>
+  <style>
+    :root {
+      --bg-dark: hsl(336 0% 1%);
+      --bg: hsl(330 0% 4%);
+      --bg-light: hsl(0 0% 9%);
+      --text: hsl(0 0% 95%);
+      --text-muted: hsl(300 0% 69%);
+      --highlight: hsl(330 0% 39%);
+      --border: hsl(0 0% 28%);
+      --border-muted: hsl(300 0% 18%);
+      --primary: hsl(50 43% 58%);
+      --secondary: hsl(233 73% 79%);
+      --danger: hsl(9 26% 64%);
+      --warning: hsl(52 19% 57%);
+      --success: hsl(146 17% 59%);
+      --info: hsl(217 28% 65%);
+      --bg-color: var(--bg-dark);
+      --bg-elev-1: var(--bg);
+      --bg-elev-2: var(--bg-light);
+      --bg-elev-3: var(--highlight);
+      --panel-border: var(--border);
+      --text-color: var(--text);
+      --text-dim: var(--text-muted);
+      --accent-hsl: var(--primary);
+      --accent-h: 50;
+      --accent-s: 43%;
+      --accent-l: 58%;
+      --accent: hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+      --accent-strong: hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) + 8%));
+      --accent-soft: hsl(var(--accent-h) calc(var(--accent-s) - 25%) calc(var(--accent-l) - 18%));
+      --focus-ring: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.45);
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --transition: 0.18s cubic-bezier(.4, .15, .2, 1);
+      --shadow-sm: 0 2px 4px -1px rgba(0, 0, 0, .5), 0 1px 2px rgba(0, 0, 0, .3);
+      --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, .55), 0 2px 4px rgba(0, 0, 0, .4);
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(180deg, var(--bg-dark), var(--bg));
+      color: var(--text-color);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 90vw;
+      margin: 0 auto;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .demo-card {
+      background: var(--bg-elev-2);
+      border-radius: var(--radius-lg);
+      padding: 20px 22px 26px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(4px);
+    }
+
+    spine-viewer {
+      width: 100%;
+      height: 60vh;
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-md);
+      display: block;
+      margin: 10px 0;
+      background: radial-gradient(circle at 50% 45%, var(--bg) 0%, var(--bg-dark) 75%);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 6px 18px -6px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+
+    /* Drag & Drop highlight */
+    spine-viewer.drag-over {
+      outline: 3px dashed var(--accent);
+      outline-offset: -3px;
+      filter: brightness(1.1);
+    }
+    spine-viewer.drag-over::after {
+      content: '放開滑鼠以載入檔案 ( .skel / .json + .atlas + image )';
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: .5px;
+      text-align: center;
+      padding: 0 30px;
+      backdrop-filter: blur(2px) brightness(1.2);
+      pointer-events: none;
+      text-shadow: 0 2px 4px rgba(0,0,0,.6);
+      animation: dropPulse 0.9s ease-in-out infinite alternate;
+    }
+    @keyframes dropPulse { from { transform: scale(.985); } to { transform: scale(1.01); } }
+
+    h1 {
+      text-align: center;
+      color: var(--text-color);
+      margin-bottom: 30px;
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
+
+    .controls {
+      margin-top: 10px;
+    }
+
+    .controls button {
+      background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+      color: #1c1405;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      margin-right: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: .3px;
+      position: relative;
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, .6), 0 1px 2px rgba(0, 0, 0, .4);
+      transition: var(--transition);
+    }
+
+    .controls button:hover {
+      filter: brightness(1.06);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px -2px rgba(0, 0, 0, .7), 0 2px 4px rgba(0, 0, 0, .55);
+    }
+
+    .controls button:active {
+      transform: translateY(0);
+    }
+
+    .controls input[type="url"],
+    .controls select {
+      background: var(--bg-elev-1);
+      padding: 10px 12px;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      color: var(--text-color);
+      transition: var(--transition);
+      margin-right: 10px;
+    }
+
+    .controls input[type="url"]:focus,
+    .controls select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--focus-ring);
+    }
+
+    #upload-status {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      background: var(--bg-elev-1);
+      border: 1px solid var(--border-muted);
+      color: var(--text-dim);
+      line-height: 1.4;
+      letter-spacing: .3px;
+    }
+
+    #animation-list {
+      margin-top: 16px;
+      background: var(--bg-elev-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px 18px;
+      color: var(--text-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    #animation-list h4 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .anim-scroll {
+      max-height: 240px;
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) transparent;
+    }
+
+    .anim-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .anim-scroll::-webkit-scrollbar-track {
+      background: #1a1f25;
+      border-radius: 4px;
+    }
+
+    .anim-scroll::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--accent), var(--accent-strong));
+      border-radius: 4px;
+    }
+
+    .anim-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+    }
+
+    .anim-btn {
+      width: 100%;
+      background: var(--bg-elev-2);
+      color: var(--text-color);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      line-height: 1.2;
+      letter-spacing: .4px;
+      transition: var(--transition);
+      position: relative;
+      font-weight: 500;
+    }
+
+    .anim-btn:hover {
+      background: var(--bg-elev-3);
+      border-color: var(--border);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px -2px rgba(0, 0, 0, .6);
+    }
+
+    .anim-btn:active {
+      transform: translateY(0);
+    }
+
+    .anim-btn.active {
+      background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+      color: #1c1405;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 6px 16px -4px rgba(0, 0, 0, .65);
+      font-weight: 600;
+    }
+
+    .anim-empty {
+      font-size: 13px;
+      opacity: .65;
+      padding: 4px 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="demo-grid">
+      <div class="demo-card">
+        <spine-viewer id="spineViewer" animation-name="idle" src="./docs/spineboy/spineboy-pro.json"></spine-viewer>
+        <div class="controls">
+          <button type="button" onclick="document.getElementById('spine-file-input').click()">選擇檔案</button>
+          <button id="toggle-skeleton-btn" onclick="toggleSkeletonDebug('spineViewer')">顯示骨架</button>
+          <a id="upload-status">_(:3 」∠ )_</a>
+          <div style="display:none;">
+            <input type="url" id="spine-url" placeholder="留空白就好" />
+            <button onclick="loadSpineFromUrl()">載入 Spine</button>
+          </div>
+          <input 
+            id="spine-file-input" 
+            type="file" 
+            style="display:none;" 
+            multiple 
+            accept=".skel,.json,.atlas,image/*" 
+            onchange="handleSpineFileSelection(event)" />
+        </div>
+        <div id="animation-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo bootstrap: imports src in dev, dist/CDN in production (see src/demo-entry.js) -->
+  <script type="module" src="./src/spine-viewer.js"></script>
+  <script>
+    function autoListAnimations(viewerId, attempts = 0) {
+      const maxAttempts = 50;
+      const viewer = document.getElementById(viewerId);
+      if (!viewer) return;
+      try {
+        const animations = viewer.getAnimations ? viewer.getAnimations() : [];
+        if (animations && animations.length) {
+          listAnimations(viewerId);
+          return;
+        }
+      } catch (e) { } if (attempts < maxAttempts) {
+        setTimeout(() => autoListAnimations(viewerId, attempts + 1), 100);
+      }
+    }
+
+    function changeAnimation(viewerId, animationName) {
+      const viewer = document.getElementById(viewerId);
+      viewer.setAnimation(animationName);
+      listAnimations(viewerId);
+    }
+
+    function listAnimations(viewerId) {
+      const viewer = document.getElementById(viewerId);
+      const animations = viewer.getAnimations();
+      const listElement = document.getElementById('animation-list');
+      const current = viewer.getCurrentAnimation ? viewer.getCurrentAnimation() : null;
+      if (animations.length > 0) {
+        const buttons = animations.map(anim => {
+          const safe = anim.replace(/"/g, '&quot;');
+          const activeCls = current === anim ? 'active' : '';
+          return `<li><button class="anim-btn ${activeCls}" onclick="changeAnimation('${viewerId}', '${safe}')">${anim}</button></li>`;
+        }).join('');
+        listElement.innerHTML = `<h4>可用動畫</h4><div class="anim-scroll"><ul class="anim-list">${buttons}</ul></div>`;
+      } else {
+        listElement.innerHTML = '<div class="anim-empty">暫無動畫資料</div>';
+      }
+    }
+
+    function loadSpineFromUrl() {
+      const urlInput = document.getElementById('spine-url');
+      const statusElement = document.getElementById('upload-status');
+      const spineUrl = urlInput.value.trim();
+      if (!spineUrl) {
+        statusElement.className = 'status-error';
+        statusElement.textContent = '請輸入 Spine 檔案路徑';
+        return;
+      }
+
+      const validExtensions = ['.skel', '.json'];
+      const hasValidExtension = validExtensions.some(ext => spineUrl.toLowerCase().includes(ext));
+      if (!hasValidExtension) {
+        statusElement.className = 'status-error';
+        statusElement.textContent = '路徑應該指向 .skel 或 .json 格式的 Spine 檔案';
+        return;
+      }
+
+      statusElement.className = 'status-info';
+      statusElement.textContent = '正在載入 Spine 檔案...';
+      const viewer = document.getElementById('spineViewer');
+      try {
+        viewer.renderSpine({ src: spineUrl });
+        autoListAnimations('spineViewer');
+        statusElement.className = 'status-success';
+        statusElement.textContent = 'Spine 檔案載入成功！';
+      } catch (error) {
+        statusElement.className = 'status-error';
+        statusElement.textContent = `載入失敗: ${error.message}`;
+        console.error('Spine 載入錯誤:', error);
+      }
+    }
+
+    function selectCharacter() {
+      const select = document.getElementById('character-select');
+      const urlInput = document.getElementById('spine-url');
+      const character = select.value;
+      if (character) {
+        urlInput.value = `./docs/${character}/${character}.skel`;
+        loadSpineFromUrl();
+      }
+    }
+
+    function toggleSkeletonDebug(viewerId) {
+      const viewer = document.getElementById(viewerId);
+      const btn = document.getElementById('toggle-skeleton-btn');
+      if (!viewer) return;
+      if (viewer.drawSkeleton) {
+        viewer.disableSkeletonDebug();
+        btn.textContent = '顯示骨架';
+      } else {
+        viewer.setSkeletonDebug(true);
+        btn.textContent = '隱藏骨架';
+      }
+    }
+
+    // Handle multi-file selection for Spine assets (.skel / .json / .atlas / images)
+    function handleSpineFileSelection(e) {
+      const input = e.target;
+      const files = Array.from(input.files || []);
+      console.log('[spine-viewer] Selected files:', files.map(f => f.name));
+      // Call hook for future extension
+      onSpineFilesSelected(files);
+      // Allow selecting the same files again by clearing value
+      input.value = '';
+    }
+
+    // Placeholder hook that can be customized later
+    async function onSpineFilesSelected(files) {
+      const skeletonFile = files.find(f => f.name.endsWith('.skel') || f.name.endsWith('.json'));
+      if (!skeletonFile) {
+        alert('請選擇包含 .skel 或 .json 檔案的 Spine 資料');
+        return;
+      }
+      const skeletonFileExtString = skeletonFile.name.endsWith('.skel') ? '.skel' : '.json';
+
+      const imageFile = files.find(f => f.name.endsWith('.png') || f.name.endsWith('.jpg') || f.name.endsWith('.jpeg'));
+      if (!imageFile) {
+        alert('請選擇包含圖片檔案（.png, .jpg, .jpeg）的 Spine 資料');
+        return;
+      }
+      const imageFileExtString = imageFile.name.endsWith('.png') ? '.png' : (imageFile.name.endsWith('.jpg') ? '.jpg' : '.jpeg');
+
+      const atlasFile = files.find(f => f.name.endsWith('.atlas'));
+      if (!atlasFile) {
+        alert('請選擇包含 .atlas 檔案的 Spine 資料');
+        return;
+      }
+
+      const viewer = document.getElementById('spineViewer');
+      if (!viewer) {
+        alert('找不到 spine-viewer 元件');
+        return;
+      }
+
+      const skeletonUrl = URL.createObjectURL(skeletonFile);
+      const imageUrl = imageFile ? URL.createObjectURL(imageFile) : null;
+      const atlasUrl = atlasFile ? URL.createObjectURL(atlasFile) : null;
+
+      // convert files into base 64 string
+      const skeletonBase64 = await fileToBase64(skeletonFile);
+      const imageBase64 = imageFile ? await fileToBase64(imageFile) : null;
+      const atlasBase64 = atlasFile ? await fileToBase64(atlasFile) : null;
+
+      try {
+        await viewer.renderSpine({ src: {
+          spineSkeleton: { src: skeletonBase64, format: skeletonFileExtString },
+          spineImage: { name: imageFile.name, url: imageUrl, src: imageBase64, format: imageFileExtString },
+          spineAtlas: { src: atlasBase64, format: '.atlas' },
+        }});
+        autoListAnimations('spineViewer');
+      }
+      catch (error) {
+        alert(`載入 Spine 檔案失敗: ${error.message}`);
+        console.error('Spine 載入錯誤:', error);
+      }
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Drag & Drop integration ----------------------------------------------
+    function setupSpineDragAndDrop() {
+      const dropZone = document.getElementById('spineViewer');
+      if (!dropZone) return;
+
+      const acceptableExt = /\.(skel|json|atlas|png|jpg|jpeg)$/i;
+
+      function prevent(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      // Global prevent default so browser doesn't open file
+      window.addEventListener('dragover', prevent);
+      window.addEventListener('drop', e => {
+        // Allow drop only if it's on our zone; otherwise just prevent navigation
+        prevent(e);
+      });
+
+      ['dragenter', 'dragover'].forEach(evt => {
+        dropZone.addEventListener(evt, e => {
+          prevent(e);
+          const items = Array.from(e.dataTransfer?.items || []);
+          if (items.some(it => it.kind === 'file')) {
+            dropZone.classList.add('drag-over');
+          }
+        });
+      });
+
+      dropZone.addEventListener('dragleave', e => {
+        // Remove highlight only if leaving the element (relatedTarget null when leaving window)
+        if (!dropZone.contains(e.relatedTarget)) {
+          dropZone.classList.remove('drag-over');
+        }
+      });
+      dropZone.addEventListener('dragend', () => dropZone.classList.remove('drag-over'));
+
+      // Fallback: if mouse leaves window entirely
+      window.addEventListener('dragleave', e => {
+        if (e.clientX <= 0 || e.clientY <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+          dropZone.classList.remove('drag-over');
+        }
+      });
+
+      dropZone.addEventListener('drop', e => {
+        prevent(e);
+        dropZone.classList.remove('drag-over');
+        const files = Array.from(e.dataTransfer?.files || []);
+        if (!files.length) return;
+        // Filter to acceptable extensions (optional: keep all and rely on handler)
+        const filtered = files.filter(f => acceptableExt.test(f.name));
+        const finalFiles = filtered.length ? filtered : files; // fallback if user dropped a zip etc.
+        handleSpineFileSelection({ target: { files: finalFiles } });
+      });
+      console.log('[spine-viewer] Drag & Drop setup complete (improved)');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setupSpineDragAndDrop();
+      autoListAnimations('spineViewer');
+      const viewer = document.getElementById('spineViewer');
+      if (viewer && viewer.setHighlightColorFromCSS) {
+        viewer.setHighlightColorFromCSS();
+      }
+    });
+  </script>
+</body>
+
+</html>
