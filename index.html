@@ -92,11 +92,12 @@
       outline-offset: -3px;
       filter: brightness(1.1);
     }
+
     spine-viewer.drag-over::after {
       content: '放開滑鼠以載入檔案 ( .skel / .json + .atlas + image )';
       position: absolute;
       inset: 0;
-      background: rgba(0,0,0,.55);
+      background: rgba(0, 0, 0, .55);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -108,10 +109,19 @@
       padding: 0 30px;
       backdrop-filter: blur(2px) brightness(1.2);
       pointer-events: none;
-      text-shadow: 0 2px 4px rgba(0,0,0,.6);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, .6);
       animation: dropPulse 0.9s ease-in-out infinite alternate;
     }
-    @keyframes dropPulse { from { transform: scale(.985); } to { transform: scale(1.01); } }
+
+    @keyframes dropPulse {
+      from {
+        transform: scale(.985);
+      }
+
+      to {
+        transform: scale(1.01);
+      }
+    }
 
     h1 {
       text-align: center;
@@ -271,6 +281,249 @@
       opacity: .65;
       padding: 4px 2px;
     }
+
+    /* Color picker modal styles */
+    .color-picker-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .color-picker-modal.show {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .color-picker-card {
+      background: var(--bg-elev-2);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      box-shadow: var(--shadow-md), 0 12px 32px -8px rgba(0, 0, 0, 0.7);
+      min-width: 320px;
+      animation: slideUp 0.25s cubic-bezier(.4, .15, .2, 1);
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .color-picker-card h3 {
+      margin: 0 0 18px;
+      color: var(--text-color);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
+
+    .custom-color-picker {
+      margin-bottom: 20px;
+    }
+
+    /* Saturation/Brightness Selector */
+    .color-selector {
+      width: 100%;
+      height: 200px;
+      border-radius: var(--radius-md);
+      position: relative;
+      cursor: crosshair;
+      margin-bottom: 16px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), var(--shadow-sm);
+      background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent);
+    }
+
+    .color-selector-thumb {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: transform 0.1s ease;
+    }
+
+    .color-selector-thumb.active {
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    /* Hue Slider */
+    .hue-slider-wrapper {
+      margin-bottom: 16px;
+    }
+
+    .hue-slider {
+      width: 100%;
+      height: 20px;
+      border-radius: 10px;
+      position: relative;
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), var(--shadow-sm);
+      background: linear-gradient(to right,
+          #ff0000 0%, #ffff00 17%, #00ff00 33%,
+          #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+    }
+
+    .hue-slider-thumb {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: transform 0.1s ease;
+    }
+
+    .hue-slider-thumb.active {
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    /* Color Preview & Hex Input */
+    .color-preview-wrapper {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .color-preview {
+      width: 60px;
+      height: 48px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .color-hex-input {
+      flex: 1;
+      background: var(--bg-elev-1);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      color: var(--text-color);
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      letter-spacing: .5px;
+      transition: var(--transition);
+      text-transform: uppercase;
+    }
+
+    .color-hex-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--focus-ring);
+    }
+
+    /* Preset Colors */
+    .preset-colors {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .preset-color {
+      width: 100%;
+      aspect-ratio: 1;
+      border: 2px solid var(--border-muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .preset-color:hover {
+      border-color: var(--accent);
+      transform: scale(1.1);
+      box-shadow: 0 0 0 2px var(--focus-ring), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .preset-color.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--focus-ring), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .preset-color.default-preset {
+      position: relative;
+    }
+
+    .preset-color.default-preset::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border: 1.5px solid var(--bg-elev-2);
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .color-picker-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .color-picker-buttons button {
+      background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+      color: #1c1405;
+      border: 1px solid var(--border);
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: .3px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .color-picker-buttons button:hover {
+      filter: brightness(1.06);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .color-picker-buttons button.cancel {
+      background: var(--bg-elev-3);
+      color: var(--text-color);
+    }
+
+    .color-picker-buttons button.cancel:hover {
+      background: var(--highlight);
+    }
   </style>
 </head>
 
@@ -282,20 +535,52 @@
         <div class="controls">
           <button type="button" onclick="document.getElementById('spine-file-input').click()">選擇檔案</button>
           <button id="toggle-skeleton-btn" onclick="toggleSkeletonDebug('spineViewer')">顯示骨架</button>
+          <button id="change-bg-btn" onclick="openBgColorPicker('spineViewer')">背景顏色</button>
           <a id="upload-status">_(:3 」∠ )_</a>
           <div style="display:none;">
             <input type="url" id="spine-url" placeholder="留空白就好" />
             <button onclick="loadSpineFromUrl()">載入 Spine</button>
           </div>
-          <input 
-            id="spine-file-input" 
-            type="file" 
-            style="display:none;" 
-            multiple 
-            accept=".skel,.json,.atlas,image/*" 
+          <input id="spine-file-input" type="file" style="display:none;" multiple accept=".skel,.json,.atlas,image/*"
             onchange="handleSpineFileSelection(event)" />
         </div>
         <div id="animation-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Color Picker Modal -->
+  <div id="color-picker-modal" class="color-picker-modal" onclick="closeBgColorPicker(event)">
+    <div class="color-picker-card" onclick="event.stopPropagation()">
+      <h3>選擇背景顏色</h3>
+
+      <div class="custom-color-picker">
+        <!-- Saturation/Brightness Selector -->
+        <div id="color-selector" class="color-selector">
+          <div id="color-selector-thumb" class="color-selector-thumb"></div>
+        </div>
+
+        <!-- Hue Slider -->
+        <div class="hue-slider-wrapper">
+          <div id="hue-slider" class="hue-slider">
+            <div id="hue-slider-thumb" class="hue-slider-thumb"></div>
+          </div>
+        </div>
+
+        <!-- Color Preview & Hex Input -->
+        <div class="color-preview-wrapper">
+          <div id="color-preview" class="color-preview"></div>
+          <input type="text" id="bg-color-hex" class="color-hex-input" value="#2B2B2B" placeholder="#RRGGBB"
+            maxlength="7">
+        </div>
+
+        <!-- Preset Colors -->
+        <div class="preset-colors" id="preset-colors"></div>
+      </div>
+
+      <div class="color-picker-buttons">
+        <button class="cancel" onclick="closeBgColorPicker()">取消</button>
+        <button onclick="applyBgColor()">套用</button>
       </div>
     </div>
   </div>
@@ -365,6 +650,10 @@
       try {
         viewer.renderSpine({ src: spineUrl });
         autoListAnimations('spineViewer');
+
+        // Reapply saved background color after loading
+        applySavedBgColor(viewer);
+
         statusElement.className = 'status-success';
         statusElement.textContent = 'Spine 檔案載入成功！';
       } catch (error) {
@@ -446,12 +735,17 @@
       const atlasBase64 = atlasFile ? await fileToBase64(atlasFile) : null;
 
       try {
-        await viewer.renderSpine({ src: {
-          spineSkeleton: { src: skeletonBase64, format: skeletonFileExtString },
-          spineImage: { name: imageFile.name, url: imageUrl, src: imageBase64, format: imageFileExtString },
-          spineAtlas: { src: atlasBase64, format: '.atlas' },
-        }});
+        await viewer.renderSpine({
+          src: {
+            spineSkeleton: { src: skeletonBase64, format: skeletonFileExtString },
+            spineImage: { name: imageFile.name, url: imageUrl, src: imageBase64, format: imageFileExtString },
+            spineAtlas: { src: atlasBase64, format: '.atlas' },
+          }
+        });
         autoListAnimations('spineViewer');
+
+        // Reapply saved background color after loading new spine
+        applySavedBgColor(viewer);
       }
       catch (error) {
         alert(`載入 Spine 檔案失敗: ${error.message}`);
@@ -524,6 +818,263 @@
       console.log('[spine-viewer] Drag & Drop setup complete (improved)');
     }
 
+    // Custom Color Picker Implementation
+    let currentViewerId = null;
+    let pickerState = {
+      hue: 0,
+      saturation: 0,
+      brightness: 0,
+      isDraggingSaturation: false,
+      isDraggingHue: false
+    };
+
+    const presetColors = [
+      '#000000', '#1a1a1a', '#2b2b2b', '#3d3d3d',
+      '#ffffff', '#f0f0f0', '#d0d0d0', '#a0a0a0',
+      '#ff0000', '#00ff00', '#0000ff', '#ffff00',
+      '#ff00ff', '#00ffff', '#ff8800', '#8800ff'
+    ];
+
+    function openBgColorPicker(viewerId) {
+      currentViewerId = viewerId;
+      const viewer = document.getElementById(viewerId);
+      if (!viewer || !viewer.app) return;
+
+      // Get current background color (should be the saved one)
+      const currentBg = viewer.app.renderer.background.color;
+      const hexColor = '#' + currentBg.toString(16).padStart(6, '0').toUpperCase();
+
+      // Initialize picker with current color
+      initColorPicker(hexColor);
+
+      // Show modal
+      const modal = document.getElementById('color-picker-modal');
+      modal.classList.add('show');
+    }
+
+    function closeBgColorPicker(event) {
+      if (!event || event.target.classList.contains('color-picker-modal')) {
+        const modal = document.getElementById('color-picker-modal');
+        modal.classList.remove('show');
+        currentViewerId = null;
+      }
+    }
+
+    function applyBgColor() {
+      if (!currentViewerId) return;
+
+      const viewer = document.getElementById(currentViewerId);
+      if (!viewer || !viewer.app) return;
+
+      const colorHex = document.getElementById('bg-color-hex').value;
+
+      if (!/^#[0-9A-Fa-f]{6}$/i.test(colorHex)) {
+        alert('請輸入有效的顏色代碼 (例如: #2B2B2B)');
+        return;
+      }
+
+      const colorNumber = parseInt(colorHex.substring(1), 16);
+      viewer.app.renderer.background.color = colorNumber;
+
+      // Save to localStorage
+      localStorage.setItem('spineViewerBgColor', colorHex);
+
+      closeBgColorPicker();
+    }
+
+    function getSavedBgColor() {
+      return localStorage.getItem('spineViewerBgColor') || '#2b2b2b';
+    }
+
+    function applySavedBgColor(viewer) {
+      if (!viewer || !viewer.app) return;
+      const savedColor = getSavedBgColor();
+      const colorNumber = parseInt(savedColor.substring(1), 16);
+      viewer.app.renderer.background.color = colorNumber;
+    }
+
+    function initColorPicker(hexColor) {
+      // Convert hex to HSB
+      const hsb = hexToHSB(hexColor);
+      pickerState.hue = hsb.h;
+      pickerState.saturation = hsb.s;
+      pickerState.brightness = hsb.b;
+
+      // Setup preset colors
+      const presetContainer = document.getElementById('preset-colors');
+      const defaultColor = '#2b2b2b';
+      presetContainer.innerHTML = presetColors.map(color => {
+        const isDefault = color.toLowerCase() === defaultColor.toLowerCase();
+        const title = isDefault ? 'title="預設顏色"' : '';
+        const defaultClass = isDefault ? ' default-preset' : '';
+        return `<div class="preset-color${defaultClass}" style="background-color: ${color}" data-color="${color}" ${title}></div>`;
+      }).join('');
+
+      // Add preset color click handlers
+      presetContainer.querySelectorAll('.preset-color').forEach(el => {
+        el.addEventListener('click', () => {
+          const color = el.dataset.color;
+          const hsb = hexToHSB(color);
+          pickerState.hue = hsb.h;
+          pickerState.saturation = hsb.s;
+          pickerState.brightness = hsb.b;
+          updateColorPicker();
+        });
+      });      // Setup color selector
+      const colorSelector = document.getElementById('color-selector');
+      const colorSelectorThumb = document.getElementById('color-selector-thumb');
+
+      colorSelector.addEventListener('mousedown', (e) => {
+        pickerState.isDraggingSaturation = true;
+        colorSelectorThumb.classList.add('active');
+        updateSaturationBrightness(e);
+      });
+
+      // Setup hue slider
+      const hueSlider = document.getElementById('hue-slider');
+      const hueSliderThumb = document.getElementById('hue-slider-thumb');
+
+      hueSlider.addEventListener('mousedown', (e) => {
+        pickerState.isDraggingHue = true;
+        hueSliderThumb.classList.add('active');
+        updateHue(e);
+      });
+
+      // Global mouse handlers
+      document.addEventListener('mousemove', (e) => {
+        if (pickerState.isDraggingSaturation) {
+          updateSaturationBrightness(e);
+        } else if (pickerState.isDraggingHue) {
+          updateHue(e);
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        pickerState.isDraggingSaturation = false;
+        pickerState.isDraggingHue = false;
+        colorSelectorThumb.classList.remove('active');
+        hueSliderThumb.classList.remove('active');
+      });
+
+      // Hex input handler
+      const hexInput = document.getElementById('bg-color-hex');
+      hexInput.addEventListener('input', (e) => {
+        const value = e.target.value;
+        if (/^#[0-9A-Fa-f]{6}$/i.test(value)) {
+          const hsb = hexToHSB(value);
+          pickerState.hue = hsb.h;
+          pickerState.saturation = hsb.s;
+          pickerState.brightness = hsb.b;
+          updateColorPicker();
+        }
+      });
+
+      updateColorPicker();
+    }
+
+    function updateSaturationBrightness(e) {
+      const colorSelector = document.getElementById('color-selector');
+      const rect = colorSelector.getBoundingClientRect();
+      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+      const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+
+      pickerState.saturation = (x / rect.width) * 100;
+      pickerState.brightness = (1 - (y / rect.height)) * 100;
+
+      updateColorPicker();
+    }
+
+    function updateHue(e) {
+      const hueSlider = document.getElementById('hue-slider');
+      const rect = hueSlider.getBoundingClientRect();
+      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+
+      pickerState.hue = (x / rect.width) * 360;
+
+      updateColorPicker();
+    }
+
+    function updateColorPicker() {
+      const { hue, saturation, brightness } = pickerState;
+
+      // Update color selector background
+      const colorSelector = document.getElementById('color-selector');
+      const hueColor = hsbToHex(hue, 100, 100);
+      colorSelector.style.background = `
+        linear-gradient(to top, #000, transparent),
+        linear-gradient(to right, #fff, ${hueColor})
+      `;
+
+      // Update saturation/brightness thumb position
+      const colorSelectorThumb = document.getElementById('color-selector-thumb');
+      colorSelectorThumb.style.left = `${saturation}%`;
+      colorSelectorThumb.style.top = `${100 - brightness}%`;
+
+      // Update hue slider thumb position
+      const hueSliderThumb = document.getElementById('hue-slider-thumb');
+      hueSliderThumb.style.left = `${(hue / 360) * 100}%`;
+
+      // Update color preview and hex input
+      const finalColor = hsbToHex(hue, saturation, brightness);
+      const colorPreview = document.getElementById('color-preview');
+      const hexInput = document.getElementById('bg-color-hex');
+
+      colorPreview.style.backgroundColor = finalColor;
+      hexInput.value = finalColor.toUpperCase();
+    }
+
+    // Color conversion utilities
+    function hexToHSB(hex) {
+      const r = parseInt(hex.slice(1, 3), 16) / 255;
+      const g = parseInt(hex.slice(3, 5), 16) / 255;
+      const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const delta = max - min;
+
+      let h = 0;
+      if (delta !== 0) {
+        if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+        else if (max === g) h = ((b - r) / delta + 2) / 6;
+        else h = ((r - g) / delta + 4) / 6;
+      }
+
+      const s = max === 0 ? 0 : (delta / max) * 100;
+      const v = max * 100;
+
+      return { h: h * 360, s, b: v };
+    }
+
+    function hsbToHex(h, s, b) {
+      h = h / 360;
+      s = s / 100;
+      b = b / 100;
+
+      const i = Math.floor(h * 6);
+      const f = h * 6 - i;
+      const p = b * (1 - s);
+      const q = b * (1 - f * s);
+      const t = b * (1 - (1 - f) * s);
+
+      let r, g, bl;
+      switch (i % 6) {
+        case 0: r = b; g = t; bl = p; break;
+        case 1: r = q; g = b; bl = p; break;
+        case 2: r = p; g = b; bl = t; break;
+        case 3: r = p; g = q; bl = b; break;
+        case 4: r = t; g = p; bl = b; break;
+        case 5: r = b; g = p; bl = q; break;
+      }
+
+      const toHex = (n) => {
+        const hex = Math.round(n * 255).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      };
+
+      return `#${toHex(r)}${toHex(g)}${toHex(bl)}`;
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       setupSpineDragAndDrop();
       autoListAnimations('spineViewer');
@@ -531,6 +1082,17 @@
       if (viewer && viewer.setHighlightColorFromCSS) {
         viewer.setHighlightColorFromCSS();
       }
+
+      // Apply saved background color when viewer is ready
+      const checkAndApplyBgColor = () => {
+        if (viewer && viewer.app && viewer.app.renderer) {
+          applySavedBgColor(viewer);
+        } else {
+          // Retry after a short delay if app not ready yet
+          setTimeout(checkAndApplyBgColor, 100);
+        }
+      };
+      checkAndApplyBgColor();
     });
   </script>
 </body>
