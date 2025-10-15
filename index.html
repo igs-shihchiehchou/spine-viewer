@@ -282,6 +282,214 @@
       padding: 4px 2px;
     }
 
+    /* Animation Sequence Section */
+    #animation-sequence-section {
+      margin-top: 16px;
+      background: var(--bg-elev-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px 18px;
+      color: var(--text-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    #animation-sequence-section h4 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #animation-sequence-section .sequence-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    #animation-sequence-section .sequence-controls button {
+      background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+      color: #1c1405;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: .3px;
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, .6);
+      transition: var(--transition);
+    }
+
+    #animation-sequence-section .sequence-controls button:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+
+    #animation-sequence-section .sequence-controls button.secondary {
+      background: var(--bg-elev-3);
+      color: var(--text-color);
+    }
+
+    #sequence-drop-zone {
+      min-height: 80px;
+      border: 2px dashed var(--border-muted);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-top: 10px;
+      background: var(--bg-elev-2);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-start;
+      align-content: flex-start;
+      transition: var(--transition);
+    }
+
+    #sequence-drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--bg-elev-3);
+      border-style: solid;
+    }
+
+    #sequence-drop-zone.empty {
+      justify-content: center;
+      align-items: center;
+    }
+
+    #sequence-drop-zone .placeholder {
+      color: var(--text-dim);
+      font-size: 13px;
+      opacity: .65;
+      text-align: center;
+      width: 100%;
+    }
+
+    .sequence-item {
+      background: var(--bg-elev-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text-color);
+      cursor: grab;
+      user-select: none;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: var(--transition);
+      overflow: hidden;
+    }
+
+    .sequence-item-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .sequence-item:hover {
+      background: var(--highlight);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px -2px rgba(0, 0, 0, .6);
+    }
+
+    .sequence-item.dragging {
+      opacity: 0.4;
+      cursor: grabbing;
+      transform: scale(0.95);
+      box-shadow: 0 8px 20px -4px rgba(0, 0, 0, .8);
+    }
+
+    .sequence-item.drag-over {
+      border-top: 3px solid var(--accent) !important;
+      margin-top: 2px;
+    }
+
+    .sequence-item.playing {
+      background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+      color: #1c1405;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 6px 16px -4px rgba(0, 0, 0, .65);
+      font-weight: 600;
+    }
+
+    .sequence-item:active {
+      cursor: grabbing;
+    }
+
+    .sequence-item .remove-btn {
+      background: rgba(255, 0, 0, 0.7);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: var(--transition);
+    }
+
+    .sequence-item .remove-btn:hover {
+      background: rgba(255, 0, 0, 0.9);
+      transform: scale(1.1);
+    }
+
+    .sequence-item .drag-handle {
+      cursor: grab;
+      opacity: 0.5;
+      font-size: 14px;
+    }
+
+    .sequence-item .sequence-number {
+      font-weight: 600;
+      opacity: 0.7;
+      min-width: 20px;
+    }
+
+    .sequence-item-content {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .sequence-item-name {
+      flex: 1;
+    }
+
+    /* Progress bar for sequence items */
+    .sequence-progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .sequence-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    }
+
+    .sequence-item.playing .sequence-progress-fill {
+      background: linear-gradient(90deg, #1c1405, #2a2010);
+    }
+
     /* Color picker modal styles */
     .color-picker-modal {
       display: none;
@@ -545,6 +753,7 @@
             onchange="handleSpineFileSelection(event)" />
         </div>
         <div id="animation-list"></div>
+        <div id="animation-sequence-section"></div>
       </div>
     </div>
   </div>
@@ -618,12 +827,15 @@
         const buttons = animations.map(anim => {
           const safe = anim.replace(/"/g, '&quot;');
           const activeCls = current === anim ? 'active' : '';
-          return `<li><button class="anim-btn ${activeCls}" onclick="changeAnimation('${viewerId}', '${safe}')">${anim}</button></li>`;
+          return `<li><button class="anim-btn ${activeCls}" draggable="true" ondragstart="handleAnimDragStart(event, '${safe}')" onclick="changeAnimation('${viewerId}', '${safe}')">${anim}</button></li>`;
         }).join('');
         listElement.innerHTML = `<h4>可用動畫</h4><div class="anim-scroll"><ul class="anim-list">${buttons}</ul></div>`;
       } else {
         listElement.innerHTML = '<div class="anim-empty">暫無動畫資料</div>';
       }
+
+      // Initialize animation sequence section
+      initAnimationSequence(viewerId);
     }
 
     function loadSpineFromUrl() {
@@ -1073,6 +1285,344 @@
       };
 
       return `#${toHex(r)}${toHex(g)}${toHex(bl)}`;
+    }
+
+    // Animation Sequence Controller
+    let animationSequence = [];
+    let isSequencePlaying = false;
+    let currentSequenceIndex = 0;
+    let sequenceAnimationEndListener = null;
+    let progressUpdateInterval = null;
+
+    function initAnimationSequence(viewerId) {
+      const section = document.getElementById('animation-sequence-section');
+      if (!section) return;
+
+      section.innerHTML = `
+        <h4>
+          動畫序列控制 (拖曳動畫到此處)
+          <div class="sequence-controls">
+            <button onclick="playSequence('${viewerId}')" id="play-sequence-btn">播放</button>
+            <button onclick="stopSequence('${viewerId}')" class="secondary">停止</button>
+            <button onclick="clearSequence('${viewerId}')" class="secondary">清空</button>
+          </div>
+        </h4>
+        <div id="sequence-drop-zone" class="empty">
+          <div class="placeholder">拖曳動畫到此處建立序列</div>
+        </div>
+      `;
+
+      setupSequenceDropZone(viewerId);
+      renderSequence();
+    }
+
+    function setupSequenceDropZone(viewerId) {
+      const dropZone = document.getElementById('sequence-drop-zone');
+      if (!dropZone) return;
+
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+      });
+
+      dropZone.addEventListener('dragleave', (e) => {
+        if (!dropZone.contains(e.relatedTarget)) {
+          dropZone.classList.remove('drag-over');
+        }
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const animName = e.dataTransfer.getData('text/plain');
+        if (animName) {
+          addAnimationToSequence(animName);
+          renderSequence();
+        }
+      });
+    }
+
+    function handleAnimDragStart(event, animName) {
+      event.dataTransfer.setData('text/plain', animName);
+      event.dataTransfer.effectAllowed = 'copy';
+    }
+
+    function addAnimationToSequence(animName) {
+      animationSequence.push(animName);
+      console.log('[Sequence] Added:', animName, '| Total:', animationSequence.length);
+    }
+
+    function removeAnimationFromSequence(index) {
+      animationSequence.splice(index, 1);
+      console.log('[Sequence] Removed at index:', index, '| Remaining:', animationSequence.length);
+      renderSequence();
+    }
+
+    function clearSequence(viewerId) {
+      animationSequence = [];
+      currentSequenceIndex = 0;
+      stopSequence(viewerId);
+      renderSequence();
+      console.log('[Sequence] Cleared');
+    }
+
+    function renderSequence() {
+      const dropZone = document.getElementById('sequence-drop-zone');
+      if (!dropZone) return;
+
+      if (animationSequence.length === 0) {
+        dropZone.classList.add('empty');
+        dropZone.innerHTML = '<div class="placeholder">拖曳動畫到此處建立序列</div>';
+        return;
+      }
+
+      dropZone.classList.remove('empty');
+      dropZone.innerHTML = animationSequence.map((anim, index) => {
+        const isPlaying = isSequencePlaying && index === currentSequenceIndex;
+        const playingClass = isPlaying ? 'playing' : '';
+        return `
+          <div class="sequence-item ${playingClass}" draggable="true" data-index="${index}">
+            <div class="sequence-item-header">
+              <span class="sequence-number">${index + 1}.</span>
+              <span class="drag-handle">⋮⋮</span>
+              <div class="sequence-item-content">
+                <span class="sequence-item-name">${anim}</span>
+                <button class="remove-btn" onclick="removeAnimationFromSequence(${index})" title="移除">×</button>
+              </div>
+            </div>
+            <div class="sequence-progress-bar">
+              <div class="sequence-progress-fill" id="progress-${index}" style="width: 0%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Attach drag event listeners to sequence items
+      setupSequenceItemDragHandlers();
+    }
+
+    let draggedSequenceItem = null;
+
+    function setupSequenceItemDragHandlers() {
+      const items = document.querySelectorAll('.sequence-item');
+
+      items.forEach(item => {
+        item.addEventListener('dragstart', handleSequenceItemDragStart);
+        item.addEventListener('dragover', handleSequenceItemDragOver);
+        item.addEventListener('drop', handleSequenceItemDrop);
+        item.addEventListener('dragenter', handleSequenceItemDragEnter);
+        item.addEventListener('dragleave', handleSequenceItemDragLeave);
+        item.addEventListener('dragend', handleSequenceItemDragEnd);
+      });
+    }
+
+    function handleSequenceItemDragStart(e) {
+      draggedSequenceItem = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', this.innerHTML);
+    }
+
+    function handleSequenceItemDragOver(e) {
+      if (e.preventDefault) {
+        e.preventDefault();
+      }
+      e.dataTransfer.dropEffect = 'move';
+      return false;
+    }
+
+    function handleSequenceItemDragEnter(e) {
+      if (this !== draggedSequenceItem) {
+        this.style.borderTop = '2px solid var(--accent)';
+      }
+    }
+
+    function handleSequenceItemDragLeave(e) {
+      this.style.borderTop = '';
+    }
+
+    function handleSequenceItemDrop(e) {
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      }
+      e.preventDefault();
+
+      if (draggedSequenceItem !== this) {
+        const draggedIndex = parseInt(draggedSequenceItem.getAttribute('data-index'));
+        const targetIndex = parseInt(this.getAttribute('data-index'));
+
+        // Reorder the array
+        const [removed] = animationSequence.splice(draggedIndex, 1);
+        animationSequence.splice(targetIndex, 0, removed);
+
+        console.log('[Sequence] Reordered:', animationSequence);
+        renderSequence();
+      }
+
+      this.style.borderTop = '';
+      return false;
+    }
+
+    function handleSequenceItemDragEnd(e) {
+      this.classList.remove('dragging');
+
+      // Clean up all border highlights
+      document.querySelectorAll('.sequence-item').forEach(item => {
+        item.style.borderTop = '';
+      });
+    }
+
+    function playSequence(viewerId) {
+      if (animationSequence.length === 0) {
+        alert('請先將動畫加入序列');
+        return;
+      }
+
+      const viewer = document.getElementById(viewerId);
+      if (!viewer || !viewer.spine) {
+        alert('無法播放序列：找不到 Spine viewer');
+        return;
+      }
+
+      isSequencePlaying = true;
+      currentSequenceIndex = 0;
+      console.log('[Sequence] Starting playback in loop mode');
+
+      // Update button state
+      const playBtn = document.getElementById('play-sequence-btn');
+      if (playBtn) playBtn.textContent = '播放中...';
+
+      playNextInSequence(viewerId);
+    }
+
+    function playNextInSequence(viewerId) {
+      if (!isSequencePlaying || animationSequence.length === 0) return;
+
+      const viewer = document.getElementById(viewerId);
+      if (!viewer || !viewer.spine) {
+        stopSequence(viewerId);
+        return;
+      }
+
+      const animName = animationSequence[currentSequenceIndex];
+      console.log(`[Sequence] Playing ${currentSequenceIndex + 1}/${animationSequence.length}: ${animName}`);
+
+      // Set animation to play once (not looping)
+      viewer.setAnimation(animName, false);
+      renderSequence();
+
+      // Clear previous progress interval
+      if (progressUpdateInterval) {
+        clearInterval(progressUpdateInterval);
+        progressUpdateInterval = null;
+      }
+
+      // Get animation duration
+      const track = viewer.spine.state.tracks[0];
+      if (track && track.animation) {
+        const animDuration = track.animation.duration;
+        const startTime = Date.now();
+
+        // Update progress bar periodically
+        progressUpdateInterval = setInterval(() => {
+          if (!isSequencePlaying) {
+            clearInterval(progressUpdateInterval);
+            return;
+          }
+
+          const elapsed = (Date.now() - startTime) / 1000; // convert to seconds
+          const progress = Math.min((elapsed / animDuration) * 100, 100);
+
+          const progressBar = document.getElementById(`progress-${currentSequenceIndex}`);
+          if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+          }
+
+          // Stop updating when animation is complete
+          if (progress >= 100) {
+            clearInterval(progressUpdateInterval);
+          }
+        }, 16); // Update ~60fps
+      }
+
+      // Remove previous listener if exists
+      if (sequenceAnimationEndListener) {
+        viewer.spine.state.removeListener(sequenceAnimationEndListener);
+      }
+
+      // Listen for animation complete
+      sequenceAnimationEndListener = {
+        complete: (entry) => {
+          if (!isSequencePlaying) return;
+
+          console.log(`[Sequence] Completed: ${animName}`);
+
+          // Clear progress interval
+          if (progressUpdateInterval) {
+            clearInterval(progressUpdateInterval);
+            progressUpdateInterval = null;
+          }
+
+          // Reset progress bar for current animation
+          const progressBar = document.getElementById(`progress-${currentSequenceIndex}`);
+          if (progressBar) {
+            progressBar.style.width = '0%';
+          }
+
+          // Move to next animation
+          currentSequenceIndex++;
+
+          // Loop back to start if we reached the end
+          if (currentSequenceIndex >= animationSequence.length) {
+            currentSequenceIndex = 0;
+            console.log('[Sequence] Looping back to start');
+            // Reset all progress bars when looping
+            animationSequence.forEach((_, idx) => {
+              const bar = document.getElementById(`progress-${idx}`);
+              if (bar) bar.style.width = '0%';
+            });
+          }
+
+          // Play next animation after a short delay
+          setTimeout(() => {
+            if (isSequencePlaying) {
+              playNextInSequence(viewerId);
+            }
+          }, 100);
+        }
+      };
+
+      viewer.spine.state.addListener(sequenceAnimationEndListener);
+    }
+
+    function stopSequence(viewerId) {
+      isSequencePlaying = false;
+      currentSequenceIndex = 0;
+
+      // Clear progress update interval
+      if (progressUpdateInterval) {
+        clearInterval(progressUpdateInterval);
+        progressUpdateInterval = null;
+      }
+
+      // Reset all progress bars
+      animationSequence.forEach((_, idx) => {
+        const bar = document.getElementById(`progress-${idx}`);
+        if (bar) bar.style.width = '0%';
+      });
+
+      const viewer = document.getElementById(viewerId);
+      if (viewer && viewer.spine && sequenceAnimationEndListener) {
+        viewer.spine.state.removeListener(sequenceAnimationEndListener);
+        sequenceAnimationEndListener = null;
+      }
+
+      // Update button state
+      const playBtn = document.getElementById('play-sequence-btn');
+      if (playBtn) playBtn.textContent = '播放';
+
+      renderSequence();
+      console.log('[Sequence] Stopped');
     }
 
     window.addEventListener('DOMContentLoaded', () => {
