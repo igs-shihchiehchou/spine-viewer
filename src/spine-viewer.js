@@ -332,10 +332,10 @@ class SpineViewer extends HTMLElement {
 
   async loadSpine(src) {
     try {
-      if (src instanceof(Object)) {
+      if (src instanceof (Object)) {
         return this.loadSpineLocal(src);
       } else {
-        return this.loadSpineRemote(src); 
+        return this.loadSpineRemote(src);
       }
     } catch (error) {
       console.error('Resource loading failed:', error);
@@ -659,6 +659,60 @@ class SpineViewer extends HTMLElement {
       return this.spine.spineData.animations.map((anim) => anim.name);
     }
     return [];
+  }
+
+  /**
+   * Get detailed animation information including affected slots and bones
+   * @returns {Array<{name: string, slots: Array<string>, bones: Array<string>, layers: Array<string>}>}
+   */
+  getAnimationsWithDetails() {
+    if (!this.spine || !this.spine.spineData) {
+      return [];
+    }
+
+    console.log('spine:')
+    console.log(this.spine);
+    console.log('Gathering animation details:');
+
+    return this.spine.spineData.animations.map((anim) => {
+      const slots = [];
+      const bones = [];
+      const layers = new Set();
+      console.log(anim);
+
+      // Extract timeline information
+      if (anim.timelines) {
+        for (const timeline of anim.timelines) {
+          // Check for slot timelines
+          if (timeline.slotIndex !== undefined && this.spine.skeleton.slots[timeline.slotIndex]) {
+            const slotName = this.spine.skeleton.slots[timeline.slotIndex].data.name;
+            if (!slots.includes(slotName)) {
+              slots.push(slotName);
+              layers.add('slot:' + slotName);
+            }
+          }
+          // Check for bone timelines
+          if (timeline.boneIndex !== undefined && this.spine.skeleton.bones[timeline.boneIndex]) {
+            const boneName = this.spine.skeleton.bones[timeline.boneIndex].data.name;
+            if (!bones.includes(boneName)) {
+              bones.push(boneName);
+              layers.add('bone:' + boneName);
+            }
+          }
+        }
+      }
+
+      return {
+        name: anim.name,
+        duration: anim.duration,
+        slots: slots,
+        bones: bones,
+        layers: Array.from(layers),
+        slotCount: slots.length,
+        boneCount: bones.length,
+        totalLayers: layers.size
+      };
+    });
   }
 
   setScale(scale) {
@@ -1108,7 +1162,7 @@ class SpineViewer extends HTMLElement {
           const ds = parseFloat(match[2]);
           const dl = parseFloat(match[3]);
           if (!Number.isNaN(dh) && !Number.isNaN(ds) && !Number.isNaN(dl)) {
-            const clamp = (v,min,max)=>Math.min(max,Math.max(min,v));
+            const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
             const hslToHex = (H, S, L) => {
               S /= 100; L /= 100;
               const k = n => (n + H / 30) % 12;
@@ -1119,10 +1173,10 @@ class SpineViewer extends HTMLElement {
               const b = Math.round(255 * f(4));
               return (r << 16) + (g << 8) + b;
             };
-            const outerHex = hslToHex(dh, clamp(ds * 0.9,0,100), clamp(dl + 4,0,100));
-            const ringStrokeHex = hslToHex(dh, clamp(ds * 1.25,0,100), clamp(dl - 12,0,100));
-            const ringFillHex = hslToHex(dh, clamp(ds * 1.05,0,100), clamp(dl - 6,0,100));
-            const coreHex = hslToHex(dh, clamp(ds * 1.35,0,100), clamp(dl - 18,0,100));
+            const outerHex = hslToHex(dh, clamp(ds * 0.9, 0, 100), clamp(dl + 4, 0, 100));
+            const ringStrokeHex = hslToHex(dh, clamp(ds * 1.25, 0, 100), clamp(dl - 12, 0, 100));
+            const ringFillHex = hslToHex(dh, clamp(ds * 1.05, 0, 100), clamp(dl - 6, 0, 100));
+            const coreHex = hslToHex(dh, clamp(ds * 1.35, 0, 100), clamp(dl - 18, 0, 100));
             this.jointOuterColor = outerHex;
             this.jointRingStrokeColor = ringStrokeHex;
             this.jointRingFillColor = ringFillHex;
