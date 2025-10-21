@@ -494,6 +494,346 @@
       background: linear-gradient(90deg, #1c1405, #2a2010);
     }
 
+    /* Multi-Track Styles */
+    #multi-track-section {
+      margin-top: 16px;
+    }
+
+    .multi-track-toggle {
+      margin-bottom: 12px;
+    }
+
+    #enable-multi-track-btn {
+      background: linear-gradient(135deg, var(--secondary), hsl(233 73% 85%));
+      color: #0a0c14;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: .4px;
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, .6);
+      transition: var(--transition);
+    }
+
+    #enable-multi-track-btn:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    #enable-multi-track-btn.active {
+      background: linear-gradient(135deg, var(--danger), hsl(9 26% 70%));
+      color: #1c0a0a;
+    }
+
+    .multi-track-container {
+      background: var(--bg-elev-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px 18px;
+      color: var(--text-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .multi-track-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 12px;
+    }
+
+    .multi-track-header h4 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    .playback-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-grow: 1;
+    }
+
+    .playback-btn {
+      padding: 6px 12px;
+      background: var(--bg-elev-2);
+      color: var(--text-color);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 14px;
+      font-weight: 600;
+      min-width: 40px;
+    }
+
+    .playback-btn:hover:not(:disabled) {
+      background: var(--bg-elev-3);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .playback-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .playback-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .playback-btn.play-btn:not(:disabled) {
+      background: linear-gradient(135deg, #2d7a3e, #3fa055);
+      border-color: #3fa055;
+      color: white;
+    }
+
+    .playback-btn.stop-btn:not(:disabled) {
+      background: linear-gradient(135deg, #8b3a3a, #b84848);
+      border-color: #b84848;
+      color: white;
+    }
+
+    .playback-time {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      padding: 0 8px;
+      min-width: 85px;
+      text-align: center;
+    }
+
+    .add-track-btn {
+      background: linear-gradient(135deg, var(--success), hsl(146 17% 65%));
+      color: #0a140c;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: .3px;
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, .6);
+      transition: var(--transition);
+    }
+
+    .add-track-btn:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .tracks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .track {
+      background: var(--bg-elev-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      transition: var(--transition);
+    }
+
+    .track:hover {
+      border-color: var(--accent-soft);
+    }
+
+    .track-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-muted);
+    }
+
+    .track-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: .4px;
+      flex-grow: 1;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+
+    .track-name:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-color);
+    }
+
+    .track-name-input {
+      flex-grow: 1;
+      background: var(--bg-elev-3);
+      color: var(--text-color);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .4px;
+      outline: none;
+      box-shadow: 0 0 0 2px var(--focus-ring);
+    }
+
+    .track-name-input::placeholder {
+      color: var(--text-dim);
+      opacity: 0.6;
+    }
+
+    .track-header.editing {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .delete-track-btn {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      transition: var(--transition);
+    }
+
+    .delete-track-btn:hover {
+      background: var(--danger);
+      color: var(--bg-dark);
+      transform: scale(1.1);
+    }
+
+    .track-slots {
+      min-height: 60px;
+      border: 2px dashed var(--border-muted);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      background: var(--bg-elev-1);
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      transition: var(--transition);
+    }
+
+    .track-slots.drag-over {
+      border-color: var(--accent);
+      background: var(--bg-elev-3);
+      border-style: solid;
+    }
+
+    .track-slots .placeholder {
+      width: 100%;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 12px;
+      opacity: .6;
+      padding: 12px 0;
+    }
+
+    .slot {
+      background: var(--bg-elev-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--text-color);
+      min-width: 80px;
+      text-align: center;
+      transition: var(--transition);
+    }
+
+    .slot.empty {
+      border-style: dashed;
+      opacity: .5;
+      color: var(--text-dim);
+    }
+
+    .slot.occupied {
+      background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+      color: #1c1405;
+      font-weight: 600;
+      position: relative;
+      cursor: grab;
+    }
+
+    .slot.occupied:active {
+      cursor: grabbing;
+    }
+
+    .slot.dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+    }
+
+    .slot.drag-over {
+      border-color: var(--accent);
+      border-style: solid;
+      border-width: 2px;
+      box-shadow: 0 0 8px var(--focus-ring);
+    }
+
+    .slot-content {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .slot-remove-btn {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--text-color);
+      border: none;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .slot.occupied:hover .slot-remove-btn {
+      opacity: 1;
+    }
+
+    .slot-remove-btn:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .slot.playing {
+      border-color: var(--accent);
+      border-style: solid;
+      box-shadow: 0 0 12px var(--focus-ring);
+      animation: slot-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes slot-pulse {
+      0%, 100% {
+        box-shadow: 0 0 12px var(--focus-ring);
+      }
+      50% {
+        box-shadow: 0 0 20px var(--accent);
+      }
+    }
+
     /* Color picker modal styles */
     .color-picker-modal {
       display: none;
@@ -758,6 +1098,16 @@
         </div>
         <div id="animation-list"></div>
         <div id="animation-sequence-section"></div>
+        
+        <!-- Multi-Track Animation Section -->
+        <div id="multi-track-section" style="display: none;">
+          <div class="multi-track-toggle">
+            <button id="enable-multi-track-btn" onclick="toggleMultiTrack()">
+              啟用多軌模式
+            </button>
+          </div>
+          <div id="multi-track-container"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -858,6 +1208,9 @@
 
       // Initialize animation sequence section
       initAnimationSequence(viewerId);
+      
+      // Show multi-track option
+      showMultiTrackOption();
     }
 
     function loadSpineFromUrl() {
@@ -1666,6 +2019,72 @@
       };
       checkAndApplyBgColor();
     });
+
+    // Multi-Track Animation Functions
+    let multiTrackUI = null;
+    let isMultiTrackMode = false;
+
+    async function toggleMultiTrack() {
+      const viewer = document.getElementById('spineViewer');
+      const button = document.getElementById('enable-multi-track-btn');
+      const container = document.getElementById('multi-track-container');
+      const sequenceSection = document.getElementById('animation-sequence-section');
+
+      if (!isMultiTrackMode) {
+        // Enable multi-track mode
+        try {
+          // Dynamically import multi-track UI module
+          const { initMultiTrackUI } = await import('./src/ui/multi-track-ui.js');
+          
+          // Enable multi-track on viewer
+          viewer.enableMultiTrack();
+          
+          // Initialize UI with spineViewer
+          multiTrackUI = initMultiTrackUI(container, {
+            maxTracks: 5,
+            spineViewer: viewer
+          });
+          
+          isMultiTrackMode = true;
+          button.textContent = '停用多軌模式';
+          button.classList.add('active');
+          
+          // Hide single-track sequence
+          if (sequenceSection) {
+            sequenceSection.style.display = 'none';
+          }
+          
+          console.log('[Multi-Track] Enabled');
+        } catch (error) {
+          console.error('[Multi-Track] Failed to enable:', error);
+          alert('無法啟用多軌模式：' + error.message);
+        }
+      } else {
+        // Disable multi-track mode
+        viewer.disableMultiTrack();
+        container.innerHTML = '';
+        multiTrackUI = null;
+        
+        isMultiTrackMode = false;
+        button.textContent = '啟用多軌模式';
+        button.classList.remove('active');
+        
+        // Show single-track sequence
+        if (sequenceSection) {
+          sequenceSection.style.display = 'block';
+        }
+        
+        console.log('[Multi-Track] Disabled');
+      }
+    }
+
+    // Show multi-track section after animations are loaded
+    function showMultiTrackOption() {
+      const multiTrackSection = document.getElementById('multi-track-section');
+      if (multiTrackSection) {
+        multiTrackSection.style.display = 'block';
+      }
+    }
   </script>
 </body>
 

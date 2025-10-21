@@ -83,6 +83,9 @@ class SpineViewer extends HTMLElement {
     this.jointRingStrokeColor = 0xff2745;   // ring stroke
     this.jointRingFillColor = 0xff1a38;     // ring fill
     this.jointCoreColor = 0xff2d55;         // core
+    // Multi-track state
+    this._multiTrackEnabled = false;
+    this._multiTrackSequence = null;
     this.attachShadow({ mode: "open" });
   }
 
@@ -618,6 +621,62 @@ class SpineViewer extends HTMLElement {
     this.centerSpine();
   }
 
+  // Multi-Track Animation Methods
+  
+  /**
+   * Enable multi-track mode
+   * @param {Object} options - Multi-track configuration options
+   * @returns {MultiTrackSequence} The sequence controller
+   */
+  enableMultiTrack(options = {}) {
+    if (this._multiTrackSequence) {
+      console.warn('Multi-track mode already enabled');
+      return this._multiTrackSequence;
+    }
+
+    // Lazy import to avoid loading if not needed
+    import('./models/MultiTrackSequence.js').then(({ MultiTrackSequence }) => {
+      this._multiTrackSequence = new MultiTrackSequence(options);
+      this._multiTrackEnabled = true;
+      
+      this.dispatchEvent(new CustomEvent('multi-track-enabled', {
+        detail: { sequence: this._multiTrackSequence }
+      }));
+    });
+
+    return this._multiTrackSequence;
+  }
+
+  /**
+   * Disable multi-track mode and revert to single-track
+   */
+  disableMultiTrack() {
+    if (!this._multiTrackEnabled) {
+      return;
+    }
+
+    this._multiTrackEnabled = false;
+    this._multiTrackSequence = null;
+
+    this.dispatchEvent(new CustomEvent('multi-track-disabled'));
+  }
+
+  /**
+   * Get current multi-track sequence
+   * @returns {MultiTrackSequence|null}
+   */
+  getMultiTrackSequence() {
+    return this._multiTrackSequence || null;
+  }
+
+  /**
+   * Check if multi-track mode is enabled
+   * @returns {boolean}
+   */
+  isMultiTrackEnabled() {
+    return this._multiTrackEnabled === true;
+  }
+
   disconnectedCallback() {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
@@ -632,6 +691,11 @@ class SpineViewer extends HTMLElement {
     }
     if (this.fileProcessor) {
       this.fileProcessor.cleanupAllUrls();
+    }
+    // Clean up multi-track
+    if (this._multiTrackSequence) {
+      this._multiTrackSequence.clear();
+      this._multiTrackSequence = null;
     }
     if (this.app) {
       this.app.destroy(true);
