@@ -1161,7 +1161,32 @@
 
     function changeAnimation(viewerId, animationName) {
       const viewer = document.getElementById(viewerId);
-      viewer.setAnimation(animationName);
+      const currentAnimation = viewer.getCurrentAnimation ? viewer.getCurrentAnimation() : null;
+
+      // Check if clicking the same animation that's currently playing
+      if (currentAnimation === animationName && viewer.spine && viewer.spine.state) {
+        const track = viewer.spine.state.tracks[0];
+
+        // Toggle pause/resume
+        if (track && track.timeScale !== undefined) {
+          if (track.timeScale === 0) {
+            // Resume animation
+            track.timeScale = 1;
+            console.log(`[Animation] Resumed: ${animationName}`);
+          } else {
+            // Pause animation
+            track.timeScale = 0;
+            console.log(`[Animation] Paused: ${animationName}`);
+          }
+        }
+      } else {
+        // Play new animation (and ensure it's not paused)
+        viewer.setAnimation(animationName);
+        if (viewer.spine && viewer.spine.state && viewer.spine.state.tracks[0]) {
+          viewer.spine.state.tracks[0].timeScale = 1;
+        }
+      }
+
       listAnimations(viewerId);
     }
 
@@ -1172,13 +1197,23 @@
       const listElement = document.getElementById('animation-list');
       const current = viewer.getCurrentAnimation ? viewer.getCurrentAnimation() : null;
 
+      // Check if current animation is paused
+      let isPaused = false;
+      if (viewer.spine && viewer.spine.state && viewer.spine.state.tracks[0]) {
+        isPaused = viewer.spine.state.tracks[0].timeScale === 0;
+      }
+
       // Debug: log animation details
       console.log('[Animation Details]', animDetails);
 
       if (animations.length > 0) {
         const buttons = animations.map((anim, index) => {
           const safe = anim.replace(/"/g, '&quot;');
-          const activeCls = current === anim ? 'active' : '';
+          const isCurrentAnim = current === anim;
+          const activeCls = isCurrentAnim ? 'active' : '';
+
+          // Add paused indicator for current animation if paused
+          const pauseIndicator = isCurrentAnim && isPaused ? ' ⏸' : '';
 
           // Get details for this animation
           const details = animDetails.find(d => d.name === anim);
@@ -1192,7 +1227,7 @@
             }
           }
 
-          return `<li><button class="anim-btn ${activeCls}" draggable="true" ondragstart="handleAnimDragStart(event, '${safe}')" onclick="changeAnimation('${viewerId}', '${safe}')" title="${safe}">${anim}${layerInfo}</button></li>`;
+          return `<li><button class="anim-btn ${activeCls}" draggable="true" ondragstart="handleAnimDragStart(event, '${safe}')" onclick="changeAnimation('${viewerId}', '${safe}')" title="${safe}">${anim}${pauseIndicator}${layerInfo}</button></li>`;
         }).join('');
         listElement.innerHTML = `<h4>可用動畫</h4><div class="anim-scroll"><ul class="anim-list">${buttons}</ul></div>`;
       } else {
