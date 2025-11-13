@@ -72,6 +72,9 @@ class SpineViewer extends HTMLElement {
     this._boneHoverListener = null;
     this._hoveredBoneName = null;
     this._boneTooltipContainer = null;
+    // bone selection state (persistent until clicking empty space)
+    this._selectedBoneName = null;
+    this._selectedBone = null;
     // theme / highlight (default yellow; can be changed via setters)
     this.highlightColor = 0xffcc00;
     this.boneHoverJointColor = this.highlightColor; // unified highlight
@@ -622,7 +625,7 @@ class SpineViewer extends HTMLElement {
   }
 
   // Multi-Track Animation Methods
-  
+
   /**
    * Enable multi-track mode
    * @param {Object} options - Multi-track configuration options
@@ -638,7 +641,7 @@ class SpineViewer extends HTMLElement {
     import('./models/MultiTrackSequence.js').then(({ MultiTrackSequence }) => {
       this._multiTrackSequence = new MultiTrackSequence(options);
       this._multiTrackEnabled = true;
-      
+
       this.dispatchEvent(new CustomEvent('multi-track-enabled', {
         detail: { sequence: this._multiTrackSequence }
       }));
@@ -1048,7 +1051,8 @@ class SpineViewer extends HTMLElement {
         this._drawBoneHoverJoint(closest, scale);
         this._positionBoneTooltip(mx, my);
       } else {
-        this._drawBoneHoverJoint(null, scale);
+        // No hover, but may have selection - draw selected bone if exists
+        this._drawBoneHoverJoint(this._selectedBone, scale);
       }
     };
     view.addEventListener('pointermove', move);
@@ -1061,18 +1065,40 @@ class SpineViewer extends HTMLElement {
       const { bone: closest, scale, minDist } = findClosestBone(mx, my);
       const name = closest ? closest.data.name : null;
       if (name) {
-        // treat click as an explicit show (just reusing tooltip logic)
-        console.debug('[SpineViewer] Click bone ->', name, 'dist=', Math.sqrt(minDist).toFixed(2));
-        this._hoveredBoneName = name; // keep consistent
-        this._updateBoneTooltip(mx, my, name);
-        this._drawBoneHoverJoint(closest, scale);
+        // Click on a bone - toggle selection (click same bone to deselect)
+        if (this._selectedBoneName === name) {
+          // Clicking the same bone again - deselect it
+          console.debug('[SpineViewer] Deselect bone ->', name);
+          this._selectedBoneName = null;
+          this._selectedBone = null;
+          this._hoveredBoneName = name; // keep hover
+          this._updateBoneTooltip(mx, my, name);
+          this._drawBoneHoverJoint(closest, scale);
+        } else {
+          // Clicking a different bone - select it
+          console.debug('[SpineViewer] Select bone ->', name, 'dist=', Math.sqrt(minDist).toFixed(2));
+          this._selectedBoneName = name;
+          this._selectedBone = closest;
+          this._hoveredBoneName = name; // keep consistent
+          this._updateBoneTooltip(mx, my, name);
+          this._drawBoneHoverJoint(closest, scale);
+        }
       }
     };
     view.addEventListener('pointerdown', down);
     const leave = () => {
       if (this._hoveredBoneName) console.debug('[SpineViewer] Pointer leave – clearing hover');
       this._hoveredBoneName = null;
-      this._updateBoneTooltip(0, 0, null);
+      // Keep selection tooltip visible if bone is selected
+      if (this._selectedBoneName) {
+        // Keep tooltip at its last position
+        // Do nothing - tooltip stays
+      } else {
+        this._updateBoneTooltip(0, 0, null);
+      }
+      // Always draw selected bone when leaving (if any)
+      const scale = this.spineContainer ? this.spineContainer.scale.x || 1 : 1;
+      this._drawBoneHoverJoint(this._selectedBone, scale);
     };
     view.addEventListener('pointerleave', leave);
     this._boneHoverListener = { move, leave, down };
@@ -1175,7 +1201,13 @@ class SpineViewer extends HTMLElement {
   }
 
   enableBoneHover() { this.boneHoverEnabled = true; }
-  disableBoneHover() { this.boneHoverEnabled = false; this._hoveredBoneName = null; this._updateBoneTooltip(0, 0, null); }
+  disableBoneHover() {
+    this.boneHoverEnabled = false;
+    this._hoveredBoneName = null;
+    this._selectedBoneName = null;
+    this._selectedBone = null;
+    this._updateBoneTooltip(0, 0, null);
+  }
 
   // Public interaction APIs
   enablePan() { this.panEnabled = true; }
@@ -1344,6 +1376,21 @@ class SpineViewer extends HTMLElement {
         drawDefault(g, this.spine);
       }
 
+      // Maintain selected bone highlight and tooltip
+      if (this._selectedBone && this.spineContainer) {
+        const scale = this.spineContainer.scale.x || 1;
+        this._drawBoneHoverJoint(this._selectedBone, scale);
+
+        // Update tooltip position to follow the bone
+        if (this._selectedBoneName && this.app) {
+          const boneWorldX = this._selectedBone.worldX + this.spine.position.x;
+          const boneWorldY = this._selectedBone.worldY + this.spine.position.y;
+          const screenX = boneWorldX * scale + this.spineContainer.position.x;
+          const screenY = boneWorldY * scale + this.spineContainer.position.y;
+          this._updateBoneTooltip(screenX, screenY, this._selectedBoneName);
+        }
+      }
+
       // Update bone name labels
       // labels removed
     };
@@ -1402,6 +1449,14 @@ class SpineViewer extends HTMLElement {
     if (this._boneLabelContainer) {
       this._boneLabelContainer.destroy({ children: true });
       this._boneLabelContainer = null;
+    }
+    // Clear bone selection and hover graphics when disabling skeleton debug
+    this._selectedBoneName = null;
+    this._selectedBone = null;
+    this._hoveredBoneName = null;
+    this._updateBoneTooltip(0, 0, null);
+    if (this._boneHoverGraphics) {
+      this._boneHoverGraphics.clear();
     }
   }
 
