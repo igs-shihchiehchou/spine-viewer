@@ -1693,9 +1693,12 @@
     // Animation Sequence Controller
     let animationSequence = [];
     let isSequencePlaying = false;
+    let isSequencePaused = false;
     let currentSequenceIndex = 0;
     let sequenceAnimationEndListener = null;
     let progressUpdateInterval = null;
+    let pausedTime = 0; // Track total paused duration
+    let lastPauseStart = 0; // Track when pause started
 
     function initAnimationSequence(viewerId) {
       const section = document.getElementById('animation-sequence-section');
@@ -1876,24 +1879,59 @@
     }
 
     function playSequence(viewerId) {
+      const viewer = document.getElementById(viewerId);
+      const playBtn = document.getElementById('play-sequence-btn');
+
+      // If already playing, toggle pause/resume
+      if (isSequencePlaying) {
+        if (!viewer || !viewer.spine || !viewer.spine.state.tracks[0]) {
+          return;
+        }
+
+        const track = viewer.spine.state.tracks[0];
+
+        if (isSequencePaused) {
+          // Resume sequence
+          track.timeScale = 1;
+          isSequencePaused = false;
+
+          // Add the paused duration to total paused time
+          if (lastPauseStart > 0) {
+            pausedTime += Date.now() - lastPauseStart;
+            lastPauseStart = 0;
+          }
+
+          if (playBtn) playBtn.textContent = '暫停';
+          console.log('[Sequence] Resumed');
+        } else {
+          // Pause sequence
+          track.timeScale = 0;
+          isSequencePaused = true;
+          lastPauseStart = Date.now(); // Record when pause started
+          if (playBtn) playBtn.textContent = '繼續';
+          console.log('[Sequence] Paused');
+        }
+        return;
+      }
+
+      // Start new sequence playback
       if (animationSequence.length === 0) {
         alert('請先將動畫加入序列');
         return;
       }
 
-      const viewer = document.getElementById(viewerId);
       if (!viewer || !viewer.spine) {
         alert('無法播放序列：找不到 Spine viewer');
         return;
       }
 
       isSequencePlaying = true;
+      isSequencePaused = false;
       currentSequenceIndex = 0;
       console.log('[Sequence] Starting playback in loop mode');
 
       // Update button state
-      const playBtn = document.getElementById('play-sequence-btn');
-      if (playBtn) playBtn.textContent = '播放中...';
+      if (playBtn) playBtn.textContent = '暫停';
 
       playNextInSequence(viewerId);
     }
@@ -1920,35 +1958,49 @@
         progressUpdateInterval = null;
       }
 
-      // Get animation duration
+      // Reset pause tracking for new animation
+      pausedTime = 0;
+      lastPauseStart = 0;
+
+      // Get animation duration and ensure animation is not paused
       const track = viewer.spine.state.tracks[0];
-      if (track && track.animation) {
-        const animDuration = track.animation.duration;
-        const startTime = Date.now();
+      if (track) {
+        // Ensure animation is not paused when starting
+        track.timeScale = 1;
 
-        // Update progress bar periodically
-        progressUpdateInterval = setInterval(() => {
-          if (!isSequencePlaying) {
-            clearInterval(progressUpdateInterval);
-            return;
-          }
+        if (track.animation) {
+          const animDuration = track.animation.duration;
+          const startTime = Date.now();
 
-          const elapsed = (Date.now() - startTime) / 1000; // convert to seconds
-          const progress = Math.min((elapsed / animDuration) * 100, 100);
+          // Update progress bar periodically
+          progressUpdateInterval = setInterval(() => {
+            if (!isSequencePlaying) {
+              clearInterval(progressUpdateInterval);
+              return;
+            }
 
-          const progressBar = document.getElementById(`progress-${currentSequenceIndex}`);
-          if (progressBar) {
-            progressBar.style.width = `${progress}%`;
-          }
+            // Calculate elapsed time excluding paused duration
+            let currentPausedTime = pausedTime;
+            if (isSequencePaused && lastPauseStart > 0) {
+              // Add current pause duration if currently paused
+              currentPausedTime += Date.now() - lastPauseStart;
+            }
 
-          // Stop updating when animation is complete
-          if (progress >= 100) {
-            clearInterval(progressUpdateInterval);
-          }
-        }, 16); // Update ~60fps
-      }
+            const elapsed = (Date.now() - startTime - currentPausedTime) / 1000; // convert to seconds
+            const progress = Math.min((elapsed / animDuration) * 100, 100);
 
-      // Remove previous listener if exists
+            const progressBar = document.getElementById(`progress-${currentSequenceIndex}`);
+            if (progressBar) {
+              progressBar.style.width = `${progress}%`;
+            }
+
+            // Stop updating when animation is complete
+            if (progress >= 100) {
+              clearInterval(progressUpdateInterval);
+            }
+          }, 16); // Update ~60fps
+        }
+      }      // Remove previous listener if exists
       if (sequenceAnimationEndListener) {
         viewer.spine.state.removeListener(sequenceAnimationEndListener);
       }
@@ -2000,7 +2052,10 @@
 
     function stopSequence(viewerId) {
       isSequencePlaying = false;
+      isSequencePaused = false;
       currentSequenceIndex = 0;
+      pausedTime = 0;
+      lastPauseStart = 0;
 
       // Clear progress update interval
       if (progressUpdateInterval) {
