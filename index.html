@@ -826,9 +826,12 @@
     }
 
     @keyframes slot-pulse {
-      0%, 100% {
+
+      0%,
+      100% {
         box-shadow: 0 0 12px var(--focus-ring);
       }
+
       50% {
         box-shadow: 0 0 20px var(--accent);
       }
@@ -1098,16 +1101,6 @@
         </div>
         <div id="animation-list"></div>
         <div id="animation-sequence-section"></div>
-        
-        <!-- Multi-Track Animation Section -->
-        <div id="multi-track-section" style="display: none;">
-          <div class="multi-track-toggle">
-            <button id="enable-multi-track-btn" onclick="toggleMultiTrack()">
-              啟用多軌模式
-            </button>
-          </div>
-          <div id="multi-track-container"></div>
-        </div>
       </div>
     </div>
   </div>
@@ -1208,7 +1201,7 @@
 
       // Initialize animation sequence section
       initAnimationSequence(viewerId);
-      
+
       // Show multi-track option
       showMultiTrackOption();
     }
@@ -2035,25 +2028,25 @@
         try {
           // Dynamically import multi-track UI module
           const { initMultiTrackUI } = await import('./src/ui/multi-track-ui.js');
-          
+
           // Enable multi-track on viewer
           viewer.enableMultiTrack();
-          
+
           // Initialize UI with spineViewer
           multiTrackUI = initMultiTrackUI(container, {
             maxTracks: 5,
             spineViewer: viewer
           });
-          
+
           isMultiTrackMode = true;
           button.textContent = '停用多軌模式';
           button.classList.add('active');
-          
+
           // Hide single-track sequence
           if (sequenceSection) {
             sequenceSection.style.display = 'none';
           }
-          
+
           console.log('[Multi-Track] Enabled');
         } catch (error) {
           console.error('[Multi-Track] Failed to enable:', error);
@@ -2064,16 +2057,16 @@
         viewer.disableMultiTrack();
         container.innerHTML = '';
         multiTrackUI = null;
-        
+
         isMultiTrackMode = false;
         button.textContent = '啟用多軌模式';
         button.classList.remove('active');
-        
+
         // Show single-track sequence
         if (sequenceSection) {
           sequenceSection.style.display = 'block';
         }
-        
+
         console.log('[Multi-Track] Disabled');
       }
     }
