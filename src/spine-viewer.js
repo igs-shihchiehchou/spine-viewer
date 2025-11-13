@@ -729,6 +729,32 @@ class SpineViewer extends HTMLElement {
   }
 
   /**
+   * Get bones controlled by a specific animation
+   * @param {string} animationName - Name of the animation
+   * @returns {Set<string>} Set of bone names controlled by the animation
+   */
+  getAnimationControlledBones(animationName) {
+    if (!this.spine || !this.spine.spineData) {
+      return new Set();
+    }
+
+    const animation = this.spine.spineData.animations.find(anim => anim.name === animationName);
+    if (!animation || !animation.timelines) {
+      return new Set();
+    }
+
+    const controlledBones = new Set();
+    for (const timeline of animation.timelines) {
+      if (timeline.boneIndex !== undefined && this.spine.skeleton.bones[timeline.boneIndex]) {
+        const boneName = this.spine.skeleton.bones[timeline.boneIndex].data.name;
+        controlledBones.add(boneName);
+      }
+    }
+
+    return controlledBones;
+  }
+
+  /**
    * Get detailed animation information including affected slots and bones
    * @returns {Array<{name: string, slots: Array<string>, bones: Array<string>, layers: Array<string>}>}
    */
@@ -1332,14 +1358,20 @@ class SpineViewer extends HTMLElement {
     const drawDefault = (g, spineInstance) => {
       const skeleton = spineInstance.skeleton;
       g.clear();
+      
+      // Get bones controlled by current animation
+      const currentAnim = this.getCurrentAnimation();
+      const controlledBones = currentAnim ? this.getAnimationControlledBones(currentAnim) : new Set();
+      
       // Adaptive thickness: base on (average of scale.x,y) so remains visible when scaled small
       const scaleAvg = this.spineContainer ? (this.spineContainer.scale.x + this.spineContainer.scale.y) * 0.5 : 1;
       const inv = 1 / (scaleAvg || 1);
       const lineWidth = 2 * inv; // thicker and scale-compensated
       const jointRadius = 4 * inv;
       const rootRadius = 6 * inv;
-      const highlight = this.highlightColor;
-      g.lineStyle(lineWidth, highlight, 0.95);
+      const highlight = this.highlightColor; // default yellow for controlled bones
+      const grayColor = 0x666666; // gray for non-controlled bones
+      
       // bones
       for (const bone of skeleton.bones) {
         const length = bone.data.length;
@@ -1348,16 +1380,24 @@ class SpineViewer extends HTMLElement {
         const rotationRad = (bone.worldRotationX || bone.rotation) * (Math.PI / 180);
         const x2 = x + Math.cos(rotationRad) * length;
         const y2 = y + Math.sin(rotationRad) * length;
+        
+        // Use highlight color for animation-controlled bones, gray for others
+        const isControlled = controlledBones.has(bone.data.name);
+        const boneColor = isControlled ? highlight : grayColor;
+        
+        g.lineStyle(lineWidth, boneColor, 0.95);
         g.moveTo(x, y);
         g.lineTo(x2, y2);
-        g.beginFill(highlight, 0.9);
+        g.beginFill(boneColor, 0.9);
         g.drawCircle(x, y, jointRadius);
         g.endFill();
       }
       // root indicator
       const root = skeleton.bones[0];
       if (root) {
-        g.beginFill(highlight, 0.95);
+        const isControlled = controlledBones.has(root.data.name);
+        const rootColor = isControlled ? highlight : grayColor;
+        g.beginFill(rootColor, 0.95);
         g.drawCircle(root.worldX, root.worldY, rootRadius);
         g.endFill();
       }
