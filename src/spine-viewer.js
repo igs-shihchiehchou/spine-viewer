@@ -714,6 +714,14 @@ class SpineViewer extends HTMLElement {
     }
   }
 
+  setPlaybackSpeed(speed) {
+    if (!this.spine || !this.spine.state) {
+      return;
+    }
+
+    this.spine.state.timeScale = speed;
+  }
+
   getCurrentAnimation() {
     if (this.spine && this.spine.state && this.spine.state.tracks && this.spine.state.tracks[0]) {
       const entry = this.spine.state.tracks[0];

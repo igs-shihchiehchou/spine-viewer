@@ -1159,6 +1159,8 @@
           <button type="button" onclick="document.getElementById('spine-file-input').click()">選擇檔案</button>
           <button id="toggle-skeleton-btn" onclick="toggleSkeletonDebug('spineViewer')">顯示骨架</button>
           <button id="change-bg-btn" onclick="openBgColorPicker('spineViewer')">背景顏色</button>
+          播放速度: <input type="number" id="playback-speed" min="0" max="10" step="0.01" value="1"
+            oninput="changePlaybackSpeed('spineViewer', this.value)"> </input>
           <a id="upload-status">_(:3 」∠ )_</a>
           <div style="display:none;">
             <input type="url" id="spine-url" placeholder="留空白就好" />
@@ -1234,25 +1236,30 @@
 
       // Check if clicking the same animation that's currently playing
       if (currentAnimation === animationName && viewer.spine && viewer.spine.state) {
-        const track = viewer.spine.state.tracks[0];
+        const state = viewer.spine.state;
 
         // Toggle pause/resume
-        if (track && track.timeScale !== undefined) {
-          if (track.timeScale === 0) {
+        if (state && state.timeScale !== undefined) {
+          if (state.timeScale === 0) {
             // Resume animation
-            track.timeScale = 1;
+            state.timeScale = 1;
             console.log(`[Animation] Resumed: ${animationName}`);
           } else {
             // Pause animation
-            track.timeScale = 0;
+            state.timeScale = 0;
             console.log(`[Animation] Paused: ${animationName}`);
           }
         }
       } else {
         // Play new animation (and ensure it's not paused)
         viewer.setAnimation(animationName);
-        if (viewer.spine && viewer.spine.state && viewer.spine.state.tracks[0]) {
-          viewer.spine.state.tracks[0].timeScale = 1;
+        if (viewer.spine && viewer.spine.state) {
+          viewer.spine.state.timeScale = 1;
+        }
+
+        const playbackSpeedInput = document.getElementById('playback-speed');
+        if (playbackSpeedInput) {
+          playbackSpeedInput.value = '1';
         }
       }
 
@@ -1263,6 +1270,15 @@
       const viewer = document.getElementById(viewerId);
       viewer.setSkin(skinName);
       listSpineData(viewerId);
+    }
+
+    function changePlaybackSpeed(viewerId, speed) {
+      const viewer = document.getElementById(viewerId);
+      const numericSpeed = parseFloat(speed);
+      if (!isNaN(numericSpeed) && numericSpeed >= 0) {
+        viewer.setPlaybackSpeed(numericSpeed);
+        console.log(`[Playback Speed] Set to ${numericSpeed}x`);
+      }
     }
 
     function listSpineData(viewerId) {
@@ -1276,8 +1292,8 @@
 
       // Check if current animation is paused
       let isPaused = false;
-      if (viewer.spine && viewer.spine.state && viewer.spine.state.tracks[0]) {
-        isPaused = viewer.spine.state.tracks[0].timeScale === 0;
+      if (viewer.spine && viewer.spine.state) {
+        isPaused = viewer.spine.state.timeScale === 0;
       }
 
       if (skins.length > 1) {
@@ -1795,6 +1811,7 @@
     let animationSequence = [];
     let isSequencePlaying = false;
     let isSequencePaused = false;
+    let isPauseNextFrame = false;
     let currentSequenceIndex = 0;
     let sequenceAnimationEndListener = null;
     let progressUpdateInterval = null;
@@ -1858,6 +1875,7 @@
     function addAnimationToSequence(animName) {
       animationSequence.push(animName);
       console.log('[Sequence] Added:', animName, '| Total:', animationSequence.length);
+      playSequence('spineViewer');
     }
 
     function removeAnimationFromSequence(index) {
@@ -1980,38 +1998,59 @@
       });
     }
 
+    function pauseSequence(viewerId) {
+      const viewer = document.getElementById(viewerId);
+      const playBtn = document.getElementById('play-sequence-btn');
+      if (!viewer || !viewer.spine || !viewer.spine.state) {
+        return;
+      }
+
+      const state = viewer.spine.state;
+      // Pause sequence
+      state.timeScale = 0;
+      isSequencePaused = true;
+      lastPauseStart = Date.now(); // Record when pause started
+      if (playBtn) playBtn.textContent = '繼續';
+      console.log('[Sequence] Paused');
+    }
+
+    function resumeSequence(viewerId) {
+      const viewer = document.getElementById(viewerId);
+      const playBtn = document.getElementById('play-sequence-btn');
+      if (!viewer || !viewer.spine || !viewer.spine.state) {
+        return;
+      }
+
+      const state = viewer.spine.state;
+
+      // Resume sequence
+      state.timeScale = 1;
+      isSequencePaused = false;
+
+      // Add the paused duration to total paused time
+      if (lastPauseStart > 0) {
+        pausedTime += Date.now() - lastPauseStart;
+        lastPauseStart = 0;
+      }
+
+      if (playBtn) playBtn.textContent = '暫停';
+      console.log('[Sequence] Resumed');
+    }
+
     function playSequence(viewerId) {
       const viewer = document.getElementById(viewerId);
       const playBtn = document.getElementById('play-sequence-btn');
+      const playbackSpeedInput = document.getElementById('playback-speed');
+      if (playbackSpeedInput) {
+        playbackSpeedInput.value = '1';
+      }
 
       // If already playing, toggle pause/resume
       if (isSequencePlaying) {
-        if (!viewer || !viewer.spine || !viewer.spine.state.tracks[0]) {
-          return;
-        }
-
-        const track = viewer.spine.state.tracks[0];
-
         if (isSequencePaused) {
-          // Resume sequence
-          track.timeScale = 1;
-          isSequencePaused = false;
-
-          // Add the paused duration to total paused time
-          if (lastPauseStart > 0) {
-            pausedTime += Date.now() - lastPauseStart;
-            lastPauseStart = 0;
-          }
-
-          if (playBtn) playBtn.textContent = '暫停';
-          console.log('[Sequence] Resumed');
+          resumeSequence(viewerId);
         } else {
-          // Pause sequence
-          track.timeScale = 0;
-          isSequencePaused = true;
-          lastPauseStart = Date.now(); // Record when pause started
-          if (playBtn) playBtn.textContent = '繼續';
-          console.log('[Sequence] Paused');
+          pauseSequence(viewerId);
         }
         return;
       }
@@ -2039,17 +2078,14 @@
     }
 
     function nextFrame(viewerId) {
-      if (!isSequencePaused) return;
-
       const viewer = document.getElementById(viewerId);
       if (!viewer || !viewer.spine || !viewer.spine.state.tracks[0]) {
         return;
       }
 
-      const track = viewer.spine.state.tracks[0];
-      track.timeScale = 1;
-      viewer.spine.state.update(1 / 60); // Advance by one frame (assuming 60fps)
-      track.timeScale = 0;
+      const state = viewer.spine.state;
+      resumeSequence(viewerId);
+      isPauseNextFrame = true;
     }
 
     function playNextInSequence(viewerId) {
@@ -2079,10 +2115,12 @@
       lastPauseStart = 0;
 
       // Get animation duration and ensure animation is not paused
-      const track = viewer.spine.state.tracks[0];
-      if (track) {
+      const state = viewer.spine.state;
+      if (state) {
         // Ensure animation is not paused when starting
-        track.timeScale = 1;
+        state.timeScale = 1;
+
+        const track = state.tracks[0];
 
         if (track.animation) {
           const animDuration = track.animation.duration;
@@ -2113,6 +2151,11 @@
             // Stop updating when animation is complete
             if (progress >= 100) {
               clearInterval(progressUpdateInterval);
+            }
+
+            if (isPauseNextFrame) {
+              pauseSequence(viewerId);
+              isPauseNextFrame = false;
             }
           }, 16); // Update ~60fps
         }
