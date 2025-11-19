@@ -1222,7 +1222,7 @@
       try {
         const animations = viewer.getAnimations ? viewer.getAnimations() : [];
         if (animations && animations.length) {
-          listSpineData(viewerId);
+          listSpineData(viewerId, true);
           return;
         }
       } catch (e) { } if (attempts < maxAttempts) {
@@ -1281,7 +1281,7 @@
       }
     }
 
-    function listSpineData(viewerId) {
+    function listSpineData(viewerId, setDefault = false) {
       const viewer = document.getElementById(viewerId);
       const skins = viewer.getSkins();
       const skinListElement = document.getElementById('skin-list');
@@ -1299,7 +1299,9 @@
       if (skins.length > 1) {
         console.log('Available skins:');
         console.log(skins);
-        viewer.setDefaultSkin();
+        if (setDefault) {
+          viewer.setDefaultSkin();
+        }
         const skinButtons = skins.map(skin => {
           try {
             const safe = skin.replace(/"/g, '&quot;');
