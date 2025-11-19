@@ -1811,6 +1811,7 @@
           <div class="sequence-controls">
             <button onclick="playSequence('${viewerId}')" id="play-sequence-btn">播放</button>
             <button onclick="stopSequence('${viewerId}')" class="secondary">停止</button>
+            <button onclick="nextFrame('${viewerId}')" class="secondary">下一幀</button>
             <button onclick="clearSequence('${viewerId}')" class="secondary">清空</button>
           </div>
         </h4>
@@ -2035,6 +2036,20 @@
       if (playBtn) playBtn.textContent = '暫停';
 
       playNextInSequence(viewerId);
+    }
+
+    function nextFrame(viewerId) {
+      if (!isSequencePaused) return;
+
+      const viewer = document.getElementById(viewerId);
+      if (!viewer || !viewer.spine || !viewer.spine.state.tracks[0]) {
+        return;
+      }
+
+      const track = viewer.spine.state.tracks[0];
+      track.timeScale = 1;
+      viewer.spine.state.update(1 / 60); // Advance by one frame (assuming 60fps)
+      track.timeScale = 0;
     }
 
     function playNextInSequence(viewerId) {
