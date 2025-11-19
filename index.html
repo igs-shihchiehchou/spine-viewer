@@ -286,6 +286,74 @@
       padding: 4px 2px;
     }
 
+
+    #skin-list {
+      margin-top: 16px;
+      background: var(--bg-elev-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px 18px;
+      color: var(--text-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    #skin-list h4 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .skin-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+    }
+
+    .skin-btn {
+      width: 100%;
+      background: var(--bg-elev-2);
+      color: var(--text-color);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      line-height: 1.2;
+      letter-spacing: .4px;
+      transition: var(--transition);
+      position: relative;
+      font-weight: 500;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .skin-btn:hover {
+      background: var(--bg-elev-3);
+      border-color: var(--border);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px -2px rgba(0, 0, 0, .6);
+    }
+
+    .skin-btn:active {
+      transform: translateY(0);
+    }
+
+    .skin-btn.active {
+      background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+      color: #1c1405;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 6px 16px -4px rgba(0, 0, 0, .65);
+      font-weight: 600;
+    }
+
     /* Animation Sequence Section */
     #animation-sequence-section {
       margin-top: 16px;
@@ -1099,6 +1167,7 @@
           <input id="spine-file-input" type="file" style="display:none;" multiple accept=".skel,.json,.atlas,image/*"
             onchange="handleSpineFileSelection(event)" />
         </div>
+        <div id='skin-list'></div>
         <div id="animation-list"></div>
         <div id="animation-sequence-section"></div>
       </div>
@@ -1144,18 +1213,18 @@
   <!-- Demo bootstrap: imports src in dev, dist/CDN in production (see src/demo-entry.js) -->
   <script type="module" src="./src/spine-viewer.js"></script>
   <script>
-    function autoListAnimations(viewerId, attempts = 0) {
+    function autoListSpineData(viewerId, attempts = 0) {
       const maxAttempts = 50;
       const viewer = document.getElementById(viewerId);
       if (!viewer) return;
       try {
         const animations = viewer.getAnimations ? viewer.getAnimations() : [];
         if (animations && animations.length) {
-          listAnimations(viewerId);
+          listSpineData(viewerId);
           return;
         }
       } catch (e) { } if (attempts < maxAttempts) {
-        setTimeout(() => autoListAnimations(viewerId, attempts + 1), 100);
+        setTimeout(() => autoListSpineData(viewerId, attempts + 1), 100);
       }
     }
 
@@ -1187,11 +1256,19 @@
         }
       }
 
-      listAnimations(viewerId);
+      listSpineData(viewerId);
     }
 
-    function listAnimations(viewerId) {
+    function changeSkin(viewerId, skinName) {
       const viewer = document.getElementById(viewerId);
+      viewer.setSkin(skinName);
+      listSpineData(viewerId);
+    }
+
+    function listSpineData(viewerId) {
+      const viewer = document.getElementById(viewerId);
+      const skins = viewer.getSkins();
+      const skinListElement = document.getElementById('skin-list');
       const animations = viewer.getAnimations();
       const animDetails = viewer.getAnimationsWithDetails ? viewer.getAnimationsWithDetails() : [];
       const listElement = document.getElementById('animation-list');
@@ -1201,6 +1278,30 @@
       let isPaused = false;
       if (viewer.spine && viewer.spine.state && viewer.spine.state.tracks[0]) {
         isPaused = viewer.spine.state.tracks[0].timeScale === 0;
+      }
+
+      if (skins.length > 1) {
+        console.log('Available skins:');
+        console.log(skins);
+        viewer.setDefaultSkin();
+        const skinButtons = skins.map(skin => {
+          try {
+            const safe = skin.replace(/"/g, '&quot;');
+            const isActiveSkin = viewer.getCurrentSkin() === skin;
+            const activeCls = isActiveSkin ? 'active' : '';
+            return `<button class="skin-btn ${activeCls}" onclick="changeSkin('${viewerId}', '${safe}')"
+            title="${safe}">${skin}</button>`;
+          } catch (e) {
+            console.error('Error creating skin button for', skin, e);
+            return `<button class="skin-btn ${activeCls}" title="${safe}">${skin}</button>`;
+          }
+
+        }).join('');
+        skinListElement.innerHTML = `<h4>可用外觀</h4><div class="skin-list">${skinButtons}</div>`;
+        skinListElement.style.display = 'block';
+      } else {
+        skinListElement.innerHTML = '';
+        skinListElement.style.display = 'none';
       }
 
       // Debug: log animation details
@@ -1264,7 +1365,7 @@
       const viewer = document.getElementById('spineViewer');
       try {
         viewer.renderSpine({ src: spineUrl });
-        autoListAnimations('spineViewer');
+        autoListSpineData('spineViewer');
 
         // Reapply saved background color after loading
         applySavedBgColor(viewer);
@@ -1357,7 +1458,7 @@
             spineAtlas: { src: atlasBase64, format: '.atlas' },
           }
         });
-        autoListAnimations('spineViewer');
+        autoListSpineData('spineViewer');
 
         // Reapply saved background color after loading new spine
         applySavedBgColor(viewer);
@@ -2085,7 +2186,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       setupSpineDragAndDrop();
-      autoListAnimations('spineViewer');
+      autoListSpineData('spineViewer');
       const viewer = document.getElementById('spineViewer');
       if (viewer && viewer.setHighlightColorFromCSS) {
         viewer.setHighlightColorFromCSS();

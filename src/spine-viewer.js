@@ -89,6 +89,7 @@ class SpineViewer extends HTMLElement {
     // Multi-track state
     this._multiTrackEnabled = false;
     this._multiTrackSequence = null;
+    this._selectedSkin = 'default';
     this.attachShadow({ mode: "open" });
   }
 
@@ -721,6 +722,35 @@ class SpineViewer extends HTMLElement {
     return null;
   }
 
+  getCurrentSkin() {
+    return this._selectedSkin;
+  }
+
+  setDefaultSkin() {
+    const skins = this.getSkins();
+    if (skins.length > 0) {
+      this.setSkin(skins[0]);
+    }
+  }
+
+  setSkin(skinName) {
+    if (this._selectedSkin === skinName) return; // already set
+
+    const skins = this.getSkins();
+    if (!skins.includes(skinName)) {
+      console.warn(`Skin "${skinName}" not found`);
+      return;
+    }
+
+    console.log(`setSkin: Setting skin to "${skinName}"`);
+
+    this._selectedSkin = skinName;
+    if (this.spine && this.spine.skeleton) {
+      this.spine.skeleton.setSkinByName(skinName);
+      this.spine.skeleton.setSlotsToSetupPose();
+    }
+  }
+
   getAnimations() {
     if (this.spine && this.spine.spineData) {
       return this.spine.spineData.animations.map((anim) => anim.name);
@@ -754,6 +784,15 @@ class SpineViewer extends HTMLElement {
     return controlledBones;
   }
 
+  getSkins() {
+    if (!this.spine || !this.spine.spineData) {
+      console.warn('getSkins: No spine data available');
+      return [];
+    }
+
+    return this.spine.spineData.skins.map((skin) => skin.name);
+  }
+
   /**
    * Get detailed animation information including affected slots and bones
    * @returns {Array<{name: string, slots: Array<string>, bones: Array<string>, layers: Array<string>}>}
@@ -771,7 +810,7 @@ class SpineViewer extends HTMLElement {
       const slots = [];
       const bones = [];
       const layers = new Set();
-      console.log(anim);
+      // console.log(anim);
 
       // Extract timeline information
       if (anim.timelines) {
@@ -1358,11 +1397,11 @@ class SpineViewer extends HTMLElement {
     const drawDefault = (g, spineInstance) => {
       const skeleton = spineInstance.skeleton;
       g.clear();
-      
+
       // Get bones controlled by current animation
       const currentAnim = this.getCurrentAnimation();
       const controlledBones = currentAnim ? this.getAnimationControlledBones(currentAnim) : new Set();
-      
+
       // Adaptive thickness: base on (average of scale.x,y) so remains visible when scaled small
       const scaleAvg = this.spineContainer ? (this.spineContainer.scale.x + this.spineContainer.scale.y) * 0.5 : 1;
       const inv = 1 / (scaleAvg || 1);
@@ -1371,7 +1410,7 @@ class SpineViewer extends HTMLElement {
       const rootRadius = 6 * inv;
       const highlight = this.highlightColor; // default yellow for controlled bones
       const grayColor = 0x666666; // gray for non-controlled bones
-      
+
       // bones
       for (const bone of skeleton.bones) {
         const length = bone.data.length;
@@ -1380,11 +1419,11 @@ class SpineViewer extends HTMLElement {
         const rotationRad = (bone.worldRotationX || bone.rotation) * (Math.PI / 180);
         const x2 = x + Math.cos(rotationRad) * length;
         const y2 = y + Math.sin(rotationRad) * length;
-        
+
         // Use highlight color for animation-controlled bones, gray for others
         const isControlled = controlledBones.has(bone.data.name);
         const boneColor = isControlled ? highlight : grayColor;
-        
+
         g.lineStyle(lineWidth, boneColor, 0.95);
         g.moveTo(x, y);
         g.lineTo(x2, y2);
