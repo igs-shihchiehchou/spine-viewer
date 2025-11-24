@@ -26,20 +26,20 @@ export class PlaybackController {
 
     this.sequence = sequence;
     this.spineViewer = spineViewer;
-    
+
     // Playback state
     this.isPlaying = false;
     this.isPaused = false;
     this.rafId = null;
-    
+
     // Timing
     this.startTimestamp = null;
     this.lastTimestamp = null;
     this.elapsedTime = 0;
-    
+
     // Track-specific state: Map<trackId, { currentSlot, slotStartTime, animationDuration }>
     this.trackStates = new Map();
-    
+
     // Bind tick method for RAF
     this.tick = this.tick.bind(this);
   }
@@ -60,7 +60,7 @@ export class PlaybackController {
 
     this.isPlaying = true;
     this.isPaused = false;
-    
+
     // Reset timing
     this.startTimestamp = performance.now();
     this.lastTimestamp = null;
@@ -69,18 +69,18 @@ export class PlaybackController {
     // Initialize all tracks to slot 0
     this.sequence.tracks.forEach(track => {
       track.setCurrentSlot(0);
-      
+
       // Initialize track state
       const slot = track.getSlot(0);
-      
+
       // Skip tracks with no slots
       if (!slot) {
         console.warn(`Track ${track.id} has no slot at index 0, skipping initialization`);
         return;
       }
-      
+
       const animationDuration = this._getAnimationDuration(slot.animation);
-      
+
       this.trackStates.set(track.id, {
         currentSlot: 0,
         slotStartTime: 0,
@@ -164,7 +164,7 @@ export class PlaybackController {
     console.log('PlaybackController.pause() called');
     console.log('  this.isPlaying:', this.isPlaying);
     console.log('  this.isPaused:', this.isPaused);
-    
+
     if (!this.isPlaying || this.isPaused) {
       console.log('  Early return: not playing or already paused');
       return;
@@ -201,7 +201,7 @@ export class PlaybackController {
   resume() {
     console.log('PlaybackController.resume() called');
     console.log('  this.isPaused:', this.isPaused);
-    
+
     if (!this.isPaused) {
       console.log('  Early return: not paused');
       return;
@@ -243,7 +243,7 @@ export class PlaybackController {
     this.lastTimestamp = timestamp;
 
     // Accumulate elapsed time (apply timeScale if available)
-    const timeScale = this.spineViewer.state?.timeScale || 1.0;
+    const timeScale = this.spineViewer.spine?.state?.timeScale || 1.0;
     this.elapsedTime += deltaTime * timeScale;
 
     // Update sequence playback state
@@ -267,46 +267,46 @@ export class PlaybackController {
    */
   updateTrackPlayback(track, globalTime) {
     const trackState = this.trackStates.get(track.id);
-    
+
     // Initialize state if track was added during playback
     if (!trackState) {
       const slot = track.getSlot(0);
-      
+
       // Handle track with no slots or null slot
       if (!slot) {
         console.warn(`Track ${track.id} has no slot at index 0`);
         return;
       }
-      
+
       const animationDuration = this._getAnimationDuration(slot.animation);
-      
+
       this.trackStates.set(track.id, {
         currentSlot: 0,
         slotStartTime: globalTime,
         animationDuration: animationDuration,
         isLooping: false
       });
-      
+
       if (!slot.isEmpty) {
         this._playSlotAnimation(track, slot);
       }
-      
+
       return;
     }
 
     const currentSlot = track.getSlot(trackState.currentSlot);
-    
+
     // Handle null slot (shouldn't happen but defensive check)
     if (!currentSlot) {
       console.warn(`Track ${track.id} has no slot at index ${trackState.currentSlot}`);
       return;
     }
-    
+
     // Handle empty slots - skip to next or maintain state
     if (currentSlot.isEmpty) {
       // Try to advance to next non-empty slot
       const nextSlotIndex = this._findNextNonEmptySlot(track, trackState.currentSlot);
-      
+
       if (nextSlotIndex !== -1) {
         this._advanceToSlot(track, trackState, nextSlotIndex, globalTime);
       }
@@ -321,7 +321,7 @@ export class PlaybackController {
     if (timeInSlot >= trackState.animationDuration) {
       // Advance to next slot
       const nextSlotIndex = (trackState.currentSlot + 1) % track.slots.length;
-      
+
       // Check if we're looping back to start
       if (nextSlotIndex === 0) {
         trackState.isLooping = true;
@@ -344,20 +344,20 @@ export class PlaybackController {
    */
   _advanceToSlot(track, trackState, slotIndex, currentTime) {
     const previousSlot = trackState.currentSlot;
-    
+
     trackState.currentSlot = slotIndex;
     trackState.slotStartTime = currentTime;
-    
+
     track.setCurrentSlot(slotIndex);
-    
+
     const slot = track.getSlot(slotIndex);
-    
+
     // Handle null slot
     if (!slot) {
       console.warn(`Cannot advance to null slot at index ${slotIndex} for track ${track.id}`);
       return;
     }
-    
+
     // Emit playback position changed event
     track.dispatchEvent(new CustomEvent('playback-position-changed', {
       detail: {
@@ -367,7 +367,7 @@ export class PlaybackController {
         timestamp: currentTime
       }
     }));
-    
+
     if (!slot.isEmpty) {
       trackState.animationDuration = this._getAnimationDuration(slot.animation);
       this._playSlotAnimation(track, slot);
@@ -388,16 +388,16 @@ export class PlaybackController {
    */
   _findNextNonEmptySlot(track, startIndex) {
     const numSlots = track.slots.length;
-    
+
     for (let i = 1; i < numSlots; i++) {
       const checkIndex = (startIndex + i) % numSlots;
       const slot = track.getSlot(checkIndex);
-      
+
       if (!slot.isEmpty) {
         return checkIndex;
       }
     }
-    
+
     return -1; // All slots are empty
   }
 
@@ -415,7 +415,7 @@ export class PlaybackController {
     try {
       // Try to access skeleton from different possible paths
       let skeleton = null;
-      
+
       if (this.spineViewer.skeleton) {
         skeleton = this.spineViewer.skeleton;
       } else if (this.spineViewer.spine && this.spineViewer.spine.skeleton) {
@@ -461,6 +461,38 @@ export class PlaybackController {
     } catch (error) {
       console.error(`Error playing animation "${slot.animation}":`, error);
     }
+  }
+
+  /**
+   * Set playback speed for the animation
+   * @param {number} speed - Playback speed multiplier (e.g., 0.5 = half speed, 2.0 = double speed)
+   * @throws {Error} If speed is not a positive number
+   */
+  setPlaybackSpeed(speed) {
+    if (typeof speed !== 'number' || speed <= 0) {
+      throw new Error('Playback speed must be a positive number');
+    }
+
+    // Update spine viewer timeScale
+    if (this.spineViewer && this.spineViewer.spine && this.spineViewer.spine.state) {
+      this.spineViewer.spine.state.timeScale = speed;
+    }
+
+    // Emit playback-speed-changed event
+    this.sequence.dispatchEvent(new CustomEvent('playback-speed-changed', {
+      detail: { speed, timestamp: performance.now() }
+    }));
+  }
+
+  /**
+   * Get current playback speed
+   * @returns {number} Current playback speed multiplier
+   */
+  getPlaybackSpeed() {
+    if (this.spineViewer && this.spineViewer.spine && this.spineViewer.spine.state) {
+      return this.spineViewer.spine.state.timeScale || 1.0;
+    }
+    return 1.0;
   }
 
   /**

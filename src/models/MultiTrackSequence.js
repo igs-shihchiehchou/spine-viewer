@@ -15,18 +15,19 @@ export class MultiTrackSequence extends EventTarget {
    */
   constructor(options = {}) {
     super();
-    
+
     this._tracks = [];
     this._maxTracks = options.maxTracks || 10;
     this._slotDuration = options.slotDuration || null;
-    
+
     this._playbackState = {
       isPlaying: false,
       isPaused: false,
       currentTime: 0,
       currentSlotIndex: 0,
       startTime: 0,
-      loopMode: 'continuous'
+      loopMode: 'continuous',
+      playbackSpeed: 1.0
     };
   }
 
@@ -35,7 +36,7 @@ export class MultiTrackSequence extends EventTarget {
   get playbackState() { return { ...this._playbackState }; }
   get isPlaying() { return this._playbackState.isPlaying; }
   get currentSlotIndex() { return this._playbackState.currentSlotIndex; }
-  
+
   get maxTracks() { return this._maxTracks; }
   set maxTracks(value) { this._maxTracks = value; }
 
@@ -166,5 +167,32 @@ export class MultiTrackSequence extends EventTarget {
     this.dispatchEvent(new CustomEvent('resume-requested', {
       detail: { timestamp: performance.now() }
     }));
+  }
+
+  /**
+   * Set playback speed
+   * Note: Actual speed control is handled by PlaybackController service
+   * @param {number} speed - Playback speed multiplier (e.g., 0.5 = half speed, 2.0 = double speed)
+   * @throws {Error} If speed is not a positive number
+   * @fires MultiTrackSequence#playback-speed-change-requested
+   */
+  setPlaybackSpeed(speed) {
+    if (typeof speed !== 'number' || speed <= 0) {
+      throw new Error('Playback speed must be a positive number');
+    }
+
+    this._playbackState.playbackSpeed = speed;
+
+    this.dispatchEvent(new CustomEvent('playback-speed-change-requested', {
+      detail: { speed, timestamp: performance.now() }
+    }));
+  }
+
+  /**
+   * Get current playback speed
+   * @returns {number} Current playback speed multiplier
+   */
+  getPlaybackSpeed() {
+    return this._playbackState.playbackSpeed;
   }
 }

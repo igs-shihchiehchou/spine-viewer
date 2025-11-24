@@ -2119,8 +2119,12 @@
       // Get animation duration and ensure animation is not paused
       const state = viewer.spine.state;
       if (state) {
-        // Ensure animation is not paused when starting
-        state.timeScale = 1;
+        // Ensure animation is not paused when starting, but respect user speed setting
+        const speedInput = document.getElementById('playback-speed');
+        const userSpeed = speedInput ? parseFloat(speedInput.value) : 1.0;
+
+        // Use user speed if valid and positive, otherwise default to 1
+        state.timeScale = (userSpeed > 0) ? userSpeed : 1;
 
         const track = state.tracks[0];
 
@@ -2161,7 +2165,9 @@
             }
           }, 16); // Update ~60fps
         }
-      }      // Remove previous listener if exists
+      }
+
+      // Remove previous listener if exists
       if (sequenceAnimationEndListener) {
         viewer.spine.state.removeListener(sequenceAnimationEndListener);
       }

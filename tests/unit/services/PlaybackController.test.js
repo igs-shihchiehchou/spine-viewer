@@ -28,7 +28,7 @@ describe('PlaybackController', () => {
     });
 
     sequence = new MultiTrackSequence({ maxTracks: 5 });
-    
+
     mockSpineViewer = {
       setAnimation: vi.fn(),
       stopAnimation: vi.fn(),
@@ -53,6 +53,15 @@ describe('PlaybackController', () => {
     rafCallbacks = [];
     vi.restoreAllMocks();
   });
+
+  // Helper function to add track with slots initialized
+  function addTrackWithSlots(numSlots = 3) {
+    const track = sequence.addTrack();
+    for (let i = 0; i < numSlots; i++) {
+      track.addSlot();
+    }
+    return track;
+  }
 
   describe('T082: Constructor', () => {
     it('should create PlaybackController with sequence and viewer', () => {
@@ -94,7 +103,7 @@ describe('PlaybackController', () => {
 
   describe('T083: start() method', () => {
     it('should set isPlaying to true', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -102,7 +111,7 @@ describe('PlaybackController', () => {
     });
 
     it('should emit playback-started event on sequence', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       const listener = vi.fn();
@@ -115,9 +124,9 @@ describe('PlaybackController', () => {
     });
 
     it('should set all tracks currentSlot to 0', () => {
-      const track1 = sequence.addTrack();
-      const track2 = sequence.addTrack();
-      
+      const track1 = addTrackWithSlots();
+      const track2 = addTrackWithSlots();
+
       track1.setAnimation(0, 'walk');
       track1.setAnimation(1, 'run');
       track2.setAnimation(0, 'idle');
@@ -132,7 +141,7 @@ describe('PlaybackController', () => {
     });
 
     it('should request animation frame for tick loop', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -142,9 +151,9 @@ describe('PlaybackController', () => {
     });
 
     it('should initialize track states for all tracks', () => {
-      const track1 = sequence.addTrack();
-      const track2 = sequence.addTrack();
-      
+      const track1 = addTrackWithSlots();
+      const track2 = addTrackWithSlots();
+
       track1.setAnimation(0, 'walk');
       track2.setAnimation(0, 'idle');
 
@@ -156,7 +165,7 @@ describe('PlaybackController', () => {
     });
 
     it('should not start if already playing', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -177,7 +186,7 @@ describe('PlaybackController', () => {
     });
 
     it('should record start timestamp', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       const beforeStart = performance.now();
@@ -191,7 +200,7 @@ describe('PlaybackController', () => {
 
   describe('T084: stop() method', () => {
     it('should set isPlaying to false', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -201,7 +210,7 @@ describe('PlaybackController', () => {
     });
 
     it('should emit playback-stopped event on sequence', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -217,16 +226,16 @@ describe('PlaybackController', () => {
     });
 
     it('should reset all tracks to slot 0', () => {
-      const track1 = sequence.addTrack();
-      const track2 = sequence.addTrack();
-      
+      const track1 = addTrackWithSlots();
+      const track2 = addTrackWithSlots();
+
       track1.setAnimation(0, 'walk');
       track1.setAnimation(1, 'run');
       track2.setAnimation(0, 'idle');
       track2.setAnimation(1, 'jump');
 
       controller.start();
-      
+
       // Simulate progression
       track1.setCurrentSlot(1);
       track2.setCurrentSlot(1);
@@ -238,7 +247,7 @@ describe('PlaybackController', () => {
     });
 
     it('should cancel animation frame', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -251,7 +260,7 @@ describe('PlaybackController', () => {
     });
 
     it('should reset elapsed time', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -263,7 +272,7 @@ describe('PlaybackController', () => {
     });
 
     it('should clear track states', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -283,7 +292,7 @@ describe('PlaybackController', () => {
     });
 
     it('should call stopAnimation on spine viewer', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -295,7 +304,7 @@ describe('PlaybackController', () => {
 
   describe('T085: tick() method', () => {
     it('should be called via requestAnimationFrame', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -306,7 +315,7 @@ describe('PlaybackController', () => {
     });
 
     it('should calculate delta time between frames', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -322,7 +331,7 @@ describe('PlaybackController', () => {
     });
 
     it('should accumulate elapsed time', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -342,7 +351,7 @@ describe('PlaybackController', () => {
     });
 
     it('should request next animation frame while playing', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -354,7 +363,7 @@ describe('PlaybackController', () => {
     });
 
     it('should not request animation frame when stopped', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -372,7 +381,7 @@ describe('PlaybackController', () => {
     });
 
     it('should update track playback positions', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
       track.setAnimation(1, 'run');
 
@@ -387,7 +396,7 @@ describe('PlaybackController', () => {
     });
 
     it('should maintain 60fps target with consistent timing', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -411,7 +420,7 @@ describe('PlaybackController', () => {
 
   describe('T086: Slot synchronization', () => {
     it('should advance slot based on animation duration', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk'); // 1.0s duration
 
       // Mock animation duration
@@ -434,9 +443,9 @@ describe('PlaybackController', () => {
     });
 
     it('should synchronize multiple tracks to same timing', () => {
-      const track1 = sequence.addTrack();
-      const track2 = sequence.addTrack();
-      
+      const track1 = addTrackWithSlots();
+      const track2 = addTrackWithSlots();
+
       track1.setAnimation(0, 'walk');
       track2.setAnimation(0, 'idle');
 
@@ -458,9 +467,9 @@ describe('PlaybackController', () => {
     });
 
     it('should handle tracks with different animation durations', () => {
-      const track1 = sequence.addTrack();
-      const track2 = sequence.addTrack();
-      
+      const track1 = addTrackWithSlots();
+      const track2 = addTrackWithSlots();
+
       track1.setAnimation(0, 'walk'); // 1.0s
       track2.setAnimation(0, 'jump'); // 0.5s
 
@@ -481,7 +490,7 @@ describe('PlaybackController', () => {
     });
 
     it('should loop track when reaching end of slot sequence', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
       track.setAnimation(1, 'run');
 
@@ -490,13 +499,13 @@ describe('PlaybackController', () => {
       // Simulate progressing through all slots
       rafCallbacks[0](0);
       track.setCurrentSlot(1); // Last slot
-      
+
       rafCallbacks[1](1000);
       // After animation completes, should loop to slot 0
     });
 
     it('should handle empty slots by skipping or maintaining state', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
       // Slot 1 is empty
       track.setAnimation(2, 'run');
@@ -512,7 +521,7 @@ describe('PlaybackController', () => {
     });
 
     it('should respect timeScale for playback speed', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       mockSpineViewer.spine.state.timeScale = 2.0; // 2x speed
@@ -526,7 +535,7 @@ describe('PlaybackController', () => {
     });
 
     it('should update sequence playbackState', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -540,7 +549,7 @@ describe('PlaybackController', () => {
     });
 
     it('should emit slot-changed event when advancing slots', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
       track.setAnimation(1, 'run');
 
@@ -548,7 +557,7 @@ describe('PlaybackController', () => {
       track.addEventListener('playback-position-changed', listener);
 
       controller.start();
-      
+
       // Simulate slot change
       track.setCurrentSlot(1);
 
@@ -556,10 +565,10 @@ describe('PlaybackController', () => {
     });
 
     it('should handle simultaneous slot changes across tracks', () => {
-      const track1 = sequence.addTrack();
-      const track2 = sequence.addTrack();
-      const track3 = sequence.addTrack();
-      
+      const track1 = addTrackWithSlots();
+      const track2 = addTrackWithSlots();
+      const track3 = addTrackWithSlots();
+
       track1.setAnimation(0, 'walk');
       track2.setAnimation(0, 'idle');
       track3.setAnimation(0, 'jump');
@@ -567,7 +576,7 @@ describe('PlaybackController', () => {
       controller.start();
 
       rafCallbacks[0](0);
-      
+
       // All tracks should update together
       const state1 = controller.trackStates.get(track1.id);
       const state2 = controller.trackStates.get(track2.id);
@@ -581,26 +590,26 @@ describe('PlaybackController', () => {
 
   describe('Edge cases and error handling', () => {
     it('should handle track added during playback', () => {
-      const track1 = sequence.addTrack();
+      const track1 = addTrackWithSlots();
       track1.setAnimation(0, 'walk');
 
       controller.start();
 
       // Add track while playing
-      const track2 = sequence.addTrack();
+      const track2 = addTrackWithSlots();
       track2.setAnimation(0, 'idle');
 
       // New track should be initialized in trackStates
       rafCallbacks[0](1000);
-      
+
       // Should not crash
       expect(controller.isPlaying).toBe(true);
     });
 
     it('should handle track removed during playback', () => {
-      const track1 = sequence.addTrack();
-      const track2 = sequence.addTrack();
-      
+      const track1 = addTrackWithSlots();
+      const track2 = addTrackWithSlots();
+
       track1.setAnimation(0, 'walk');
       track2.setAnimation(0, 'idle');
 
@@ -617,7 +626,7 @@ describe('PlaybackController', () => {
     });
 
     it('should handle animation changed on slot during playback', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -637,7 +646,7 @@ describe('PlaybackController', () => {
     });
 
     it('should handle very long frame times gracefully', () => {
-      const track = sequence.addTrack();
+      const track = addTrackWithSlots();
       track.setAnimation(0, 'walk');
 
       controller.start();
@@ -647,6 +656,94 @@ describe('PlaybackController', () => {
 
       // Should not crash or behave erratically
       expect(controller.isPlaying).toBe(true);
+    });
+  });
+
+  describe('T087: Playback speed control', () => {
+    it('should set playback speed', () => {
+      controller.setPlaybackSpeed(2.0);
+      expect(mockSpineViewer.spine.state.timeScale).toBe(2.0);
+    });
+
+    it('should get current playback speed', () => {
+      mockSpineViewer.spine.state.timeScale = 1.5;
+      expect(controller.getPlaybackSpeed()).toBe(1.5);
+    });
+
+    it('should return default speed when spine viewer not ready', () => {
+      const emptyController = new PlaybackController(sequence, {
+        setAnimation: vi.fn(),
+        stopAnimation: vi.fn(),
+        spine: null
+      });
+      expect(emptyController.getPlaybackSpeed()).toBe(1.0);
+    });
+
+    it('should emit playback-speed-changed event', () => {
+      const listener = vi.fn();
+      sequence.addEventListener('playback-speed-changed', listener);
+
+      controller.setPlaybackSpeed(0.5);
+
+      expect(listener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'playback-speed-changed',
+          detail: expect.objectContaining({ speed: 0.5 })
+        })
+      );
+    });
+
+    it('should throw error for negative speed', () => {
+      expect(() => {
+        controller.setPlaybackSpeed(-1.0);
+      }).toThrow('Playback speed must be a positive number');
+    });
+
+    it('should throw error for zero speed', () => {
+      expect(() => {
+        controller.setPlaybackSpeed(0);
+      }).toThrow('Playback speed must be a positive number');
+    });
+
+    it('should throw error for non-number speed', () => {
+      expect(() => {
+        controller.setPlaybackSpeed('fast');
+      }).toThrow('Playback speed must be a positive number');
+    });
+
+    it('should apply timeScale to elapsed time calculation', () => {
+      const track = addTrackWithSlots();
+      track.setAnimation(0, 'walk');
+
+      // Set 2x speed
+      controller.setPlaybackSpeed(2.0);
+      controller.start();
+
+      rafCallbacks[0](0);
+      rafCallbacks[1](500); // 0.5s real time
+
+      // At 2x speed, 0.5s real time = 1.0s animation time
+      expect(controller.elapsedTime).toBeCloseTo(1000, 1);
+    });
+
+    it('should handle speed changes during playback', () => {
+      const track = addTrackWithSlots();
+      track.setAnimation(0, 'walk');
+
+      controller.start();
+
+      // Start at normal speed
+      rafCallbacks[0](0);
+      rafCallbacks[1](500);
+      expect(controller.elapsedTime).toBeCloseTo(500, 1);
+
+      // Change to 2x speed
+      controller.setPlaybackSpeed(2.0);
+      rafCallbacks[2](1000);
+
+      // Next 500ms at 2x = 1000ms animation time
+      // Total: 500 + 1000 = 1500ms
+      expect(controller.elapsedTime).toBeCloseTo(1500, 1);
     });
   });
 });
