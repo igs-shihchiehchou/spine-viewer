@@ -46,7 +46,7 @@ export function initMultiTrackUI(container, options = {}) {
         <button class="playback-btn play-btn" title="播放">▶</button>
         <button class="playback-btn stop-btn" title="停止" disabled>■</button>
         <button class="playback-btn pause-btn" title="暫停" disabled>⏸</button>
-        <span class="playback-time">00:00.000</span>
+        <button class="playback-btn next-frame-btn" title="下一幀">⏭</button>
       </div>
       <button class="add-track-btn">+ 新增軌道</button>
     </div>
@@ -63,10 +63,12 @@ export function initMultiTrackUI(container, options = {}) {
   const playBtn = multiTrackContainer.querySelector('.play-btn');
   const stopBtn = multiTrackContainer.querySelector('.stop-btn');
   const pauseBtn = multiTrackContainer.querySelector('.pause-btn');
+  const nextFrameBtn = multiTrackContainer.querySelector('.next-frame-btn');
 
   playBtn.addEventListener('click', handlePlayClick);
   stopBtn.addEventListener('click', handleStopClick);
   pauseBtn.addEventListener('click', handlePauseClick);
+  nextFrameBtn.addEventListener('click', handleNextFrameClick);
 
   // Listen for sequence events
   sequence.addEventListener('track-added', handleTrackAdded);
@@ -105,10 +107,10 @@ function handleAddTrack() {
 function handleTrackAdded(e) {
   const { track } = e.detail;
   const trackElement = renderTrack(track);
-  
+
   const tracksList = containerElement.querySelector('.tracks-list');
   tracksList.appendChild(trackElement);
-  
+
   // Render initial slots
   renderTrackSlots(trackElement, track);
 
@@ -123,7 +125,7 @@ function handleTrackAdded(e) {
 function handleTrackRemoved(event) {
   const trackId = event.detail.trackId;
   const trackElement = containerElement.querySelector(`[data-track-id="${trackId}"]`);
-  
+
   if (trackElement) {
     trackElement.remove();
   }
@@ -138,11 +140,16 @@ export function renderTrack(track) {
   const trackElement = document.createElement('div');
   trackElement.className = 'track';
   trackElement.dataset.trackId = track.id;
-  
+
   trackElement.innerHTML = `
     <div class="track-header">
       <span class="track-name" title="點擊編輯軌道名稱">${track.name}</span>
       <button class="delete-track-btn" title="刪除軌道">×</button>
+    </div>
+    <div class="track-progress-container">
+      <div class="track-progress-bar">
+        <div class="track-progress-fill" data-track-id="${track.id}"></div>
+      </div>
     </div>
     <div class="track-slots">
       <div class="placeholder">拖曳動畫到此處</div>
@@ -191,7 +198,7 @@ export function showTrackRenameInput(track) {
 
   const trackHeader = trackElement.querySelector('.track-header');
   const trackNameElement = trackElement.querySelector('.track-name');
-  
+
   if (trackHeader.classList.contains('editing')) {
     return; // Already editing
   }
@@ -218,7 +225,7 @@ export function showTrackRenameInput(track) {
   // Handle save
   const saveRename = () => {
     const newName = input.value.trim();
-    
+
     if (newName === '') {
       // Restore original name
       input.remove();
@@ -229,7 +236,7 @@ export function showTrackRenameInput(track) {
 
     try {
       handleTrackRename(track.id, newName);
-      
+
       // Update UI
       trackNameElement.textContent = newName;
       input.remove();
@@ -281,15 +288,15 @@ export function handleTrackRename(trackId, newName) {
  */
 export function validateTrackName(name) {
   const trimmed = name.trim();
-  
+
   if (trimmed.length === 0) {
     return false;
   }
-  
+
   if (trimmed.length > 50) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -303,7 +310,7 @@ export function validateTrackName(name) {
  */
 export function setupTrackDragDrop(trackElement) {
   const slotsContainer = trackElement.querySelector('.track-slots');
-  
+
   if (!slotsContainer) return;
 
   slotsContainer.addEventListener('dragover', (e) => {
@@ -320,7 +327,7 @@ export function setupTrackDragDrop(trackElement) {
   slotsContainer.addEventListener('drop', (e) => {
     e.preventDefault();
     slotsContainer.classList.remove('drag-over');
-    
+
     const animName = e.dataTransfer.getData('text/plain');
     if (animName) {
       handleAnimationDrop(trackElement, animName);
@@ -336,15 +343,21 @@ export function setupTrackDragDrop(trackElement) {
 function handleAnimationDrop(trackElement, animationName) {
   const trackId = trackElement.dataset.trackId;
   const track = sequence.getTrack(trackId);
-  
+
   if (!track) {
     console.error('Track not found:', trackId);
     return;
   }
 
-  // Add slot with animation
+  // Single animation per track: clear existing slots and add new one
+  // Remove all existing slots
+  while (track.slots.length > 0) {
+    track.removeSlot(0);
+  }
+
+  // Add the new animation as the only slot
   track.addSlot(animationName);
-  
+
   // Re-render track slots
   renderTrackSlots(trackElement, track);
 }
@@ -356,7 +369,7 @@ function handleAnimationDrop(trackElement, animationName) {
  */
 function renderTrackSlots(trackElement, track) {
   const slotsContainer = trackElement.querySelector('.track-slots');
-  
+
   if (!slotsContainer) return;
 
   if (track.slots.length === 0) {
@@ -364,23 +377,29 @@ function renderTrackSlots(trackElement, track) {
     return;
   }
 
-  slotsContainer.innerHTML = track.slots.map((slot, index) => {
-    const emptyClass = slot.isEmpty ? 'empty' : 'occupied';
-    const slotContent = slot.isEmpty ? '空位' : slot.animation;
-    
-    return `
-      <div class="slot ${emptyClass}" 
-           data-slot-index="${index}" 
-           data-track-id="${track.id}"
-           draggable="true">
-        <span class="slot-content">${slotContent}</span>
-        ${!slot.isEmpty ? '<button class="slot-remove-btn" onclick="event.stopPropagation()">×</button>' : ''}
-      </div>
-    `;
-  }).join('');
-  
-  // Setup slot drag-drop handlers
-  setupSlotDragDrop(slotsContainer, track);
+  // Single animation per track: only show the first slot
+  const slot = track.slots[0];
+  const emptyClass = slot.isEmpty ? 'empty' : 'occupied';
+  const slotContent = slot.isEmpty ? '空位' : slot.animation;
+
+  slotsContainer.innerHTML = `
+    <div class="slot ${emptyClass} single-slot"
+         data-slot-index="0"
+         data-track-id="${track.id}">
+      <span class="slot-content">${slotContent}</span>
+      ${!slot.isEmpty ? '<button class="slot-remove-btn" onclick="event.stopPropagation()">×</button>' : ''}
+    </div>
+  `;
+
+  // Setup remove button handler only (no drag-drop between slots)
+  const slotElement = slotsContainer.querySelector('.slot');
+  const removeBtn = slotElement?.querySelector('.slot-remove-btn');
+  if (removeBtn) {
+    removeBtn.addEventListener('click', () => {
+      track.removeSlot(0);
+      renderTrackSlots(trackElement, track);
+    });
+  }
 }
 
 /**
@@ -419,7 +438,7 @@ export function renderSlot(slot) {
  */
 function setupSlotDragDrop(slotsContainer, track) {
   const slots = slotsContainer.querySelectorAll('.slot');
-  
+
   slots.forEach(slotElement => {
     slotElement.addEventListener('dragstart', handleSlotDragStart);
     slotElement.addEventListener('dragover', handleSlotDragOver);
@@ -427,14 +446,14 @@ function setupSlotDragDrop(slotsContainer, track) {
     slotElement.addEventListener('dragenter', handleSlotDragEnter);
     slotElement.addEventListener('dragleave', handleSlotDragLeave);
     slotElement.addEventListener('dragend', handleSlotDragEnd);
-    
+
     // Remove button handler
     const removeBtn = slotElement.querySelector('.slot-remove-btn');
     if (removeBtn) {
       removeBtn.addEventListener('click', () => {
         const slotIndex = parseInt(slotElement.dataset.slotIndex);
         track.removeSlot(slotIndex);
-        
+
         // Re-render slots
         const trackElement = containerElement.querySelector(`[data-track-id="${track.id}"]`);
         if (trackElement) {
@@ -498,41 +517,40 @@ function handleSlotDrop(e, track) {
     e.stopPropagation();
   }
   e.preventDefault();
-  
+
   this.classList.remove('drag-over');
-  
+
   if (draggedSlot && draggedSlot !== this) {
     const fromIndex = parseInt(draggedSlot.dataset.slotIndex);
     const toIndex = parseInt(this.dataset.slotIndex);
     const fromTrackId = draggedSlot.dataset.trackId;
     const toTrackId = this.dataset.trackId;
-    
+
     if (fromTrackId === toTrackId) {
       // Same track - reorder
       track.moveSlot(fromIndex, toIndex);
-      
+
       // Re-render slots
       const trackElement = containerElement.querySelector(`[data-track-id="${track.id}"]`);
       if (trackElement) {
         renderTrackSlots(trackElement, track);
       }
     } else {
-      // Cross-track move (swap animations)
+      // Cross-track move (replace animation in target slot, clear source)
       const fromTrack = sequence.getTrack(fromTrackId);
       const toTrack = sequence.getTrack(toTrackId);
-      
+
       if (fromTrack && toTrack) {
         const fromAnimation = fromTrack.slots[fromIndex].animation;
-        const toAnimation = toTrack.slots[toIndex].animation;
-        
-        // Swap
+
+        // Replace: set target slot to source animation, clear source slot
         toTrack.setAnimation(toIndex, fromAnimation);
-        fromTrack.setAnimation(fromIndex, toAnimation);
-        
+        fromTrack.setAnimation(fromIndex, null); // Clear source slot
+
         // Re-render both tracks
         const fromTrackElement = containerElement.querySelector(`[data-track-id="${fromTrackId}"]`);
         const toTrackElement = containerElement.querySelector(`[data-track-id="${toTrackId}"]`);
-        
+
         if (fromTrackElement) {
           renderTrackSlots(fromTrackElement, fromTrack);
         }
@@ -542,7 +560,7 @@ function handleSlotDrop(e, track) {
       }
     }
   }
-  
+
   return false;
 }
 
@@ -552,12 +570,12 @@ function handleSlotDrop(e, track) {
  */
 function handleSlotDragEnd(e) {
   this.classList.remove('dragging');
-  
+
   // Clean up drag-over classes
   document.querySelectorAll('.slot').forEach(slot => {
     slot.classList.remove('drag-over');
   });
-  
+
   draggedSlot = null;
 }
 
@@ -595,7 +613,7 @@ export function getPlaybackController() {
  */
 function handlePlaybackPositionChanged(event) {
   const { trackId, previousSlot, currentSlot } = event.detail;
-  
+
   // Clear highlight from previous slot
   if (previousSlot !== undefined && previousSlot !== null) {
     const prevSlotElement = containerElement.querySelector(
@@ -605,7 +623,7 @@ function handlePlaybackPositionChanged(event) {
       prevSlotElement.classList.remove('playing');
     }
   }
-  
+
   // Highlight current slot
   highlightActiveSlot(trackId, currentSlot);
 }
@@ -619,7 +637,7 @@ export function highlightActiveSlot(trackId, slotIndex) {
   const slotElement = containerElement.querySelector(
     `[data-track-id="${trackId}"][data-slot-index="${slotIndex}"]`
   );
-  
+
   if (slotElement) {
     // Only highlight non-empty slots
     if (!slotElement.classList.contains('empty')) {
@@ -648,11 +666,11 @@ export function updateSlotVisualState(trackId, slotIndex, state) {
   const slotElement = containerElement.querySelector(
     `[data-track-id="${trackId}"][data-slot-index="${slotIndex}"]`
   );
-  
+
   if (slotElement) {
     // Remove all state classes
     slotElement.classList.remove('playing', 'idle', 'completed');
-    
+
     // Add new state class
     if (state) {
       slotElement.classList.add(state);
@@ -684,6 +702,8 @@ function handlePlayClick() {
     return;
   }
 
+  console.log('play button clicked');
+
   if (sequence.playbackState.isPaused) {
     playbackController.resume();
   } else {
@@ -707,24 +727,40 @@ function handleStopClick() {
  */
 function handlePauseClick() {
   console.log('Pause button clicked');
-  console.log('playbackController:', playbackController);
-  console.log('sequence.playbackState:', sequence.playbackState);
-  
+  console.log('playbackController.isPlaying:', playbackController?.isPlaying);
+  console.log('playbackController.isPaused:', playbackController?.isPaused);
+  console.log('sequence.playbackState.isPlaying:', sequence.playbackState.isPlaying);
+  console.log('sequence.playbackState.isPaused:', sequence.playbackState.isPaused);
+
   if (!playbackController) {
     console.log('No playbackController, returning');
     return;
   }
 
-  // Toggle between pause and resume
-  if (sequence.playbackState.isPaused) {
+  // Use playbackController state instead of sequence state for more reliable checks
+  if (playbackController.isPaused) {
     console.log('Calling resume()');
     playbackController.resume();
-  } else if (sequence.playbackState.isPlaying) {
+  } else if (playbackController.isPlaying) {
     console.log('Calling pause()');
     playbackController.pause();
   } else {
     console.log('Not playing or paused, doing nothing');
+    console.log('  playbackController.isPlaying:', playbackController.isPlaying);
+    console.log('  playbackController.isPaused:', playbackController.isPaused);
   }
+}
+
+/**
+ * Handle next frame button click
+ */
+function handleNextFrameClick() {
+  if (!playbackController || sequence.tracks.length === 0) {
+    console.warn('Cannot advance frame: no tracks or playback controller not initialized');
+    return;
+  }
+
+  playbackController.nextFrame();
 }
 
 /**
@@ -732,7 +768,7 @@ function handlePauseClick() {
  */
 function handlePlaybackStarted() {
   updatePlaybackButtons(true, false);
-  
+
   // Highlight initial slots (slot 0) for all tracks
   sequence.tracks.forEach(track => {
     highlightActiveSlot(track.id, 0);
@@ -745,7 +781,7 @@ function handlePlaybackStarted() {
 function handlePlaybackStopped() {
   updatePlaybackButtons(false, false);
   updatePlaybackTime(0);
-  
+
   // Clear all highlights when stopped
   clearAllHighlights();
 }
@@ -782,7 +818,7 @@ function updatePlaybackButtons(isPlaying, isPaused) {
     // Update pause button text based on pause state
     pauseBtn.textContent = isPaused ? '▶' : '⏸';
     pauseBtn.title = isPaused ? '繼續' : '暫停';
-    
+
     // Update play button text
     playBtn.textContent = '▶';
     playBtn.title = '播放';
