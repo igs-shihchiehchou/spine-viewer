@@ -707,10 +707,11 @@ class SpineViewer extends HTMLElement {
   }
 
   // 公共方法
-  setAnimation(animationName, loop = true) {
+  setAnimation(animationName, loop = true, trackID = 0) {
     if (this.spine && this.spine.state) {
       // 设置新动画
-      this.spine.state.setAnimation(0, animationName, loop);
+      console.log(`set animation: ${animationName} for track ${trackID}`);
+      this.spine.state.setAnimation(trackID, animationName, loop);
     }
   }
 

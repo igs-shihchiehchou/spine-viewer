@@ -65,9 +65,13 @@ export class PlaybackController {
     this.startTimestamp = performance.now();
     this.lastTimestamp = null;
     this.elapsedTime = 0;
+    this.cycleStartTime = 0; // Track when the current cycle started
+
+    // Find longest animation duration across all tracks
+    let longestDuration = 0;
 
     // Initialize all tracks to slot 0
-    this.sequence.tracks.forEach(track => {
+    this.sequence.tracks.forEach((track, index) => {
       track.setCurrentSlot(0);
 
       // Initialize track state
@@ -80,19 +84,24 @@ export class PlaybackController {
       }
 
       const animationDuration = this._getAnimationDuration(slot.animation);
+      longestDuration = Math.max(longestDuration, animationDuration);
 
       this.trackStates.set(track.id, {
         currentSlot: 0,
         slotStartTime: 0,
         animationDuration: animationDuration,
-        isLooping: false
+        isLooping: false,
+        isFrozen: false
       });
 
       // Play animation if slot is not empty
       if (!slot.isEmpty) {
-        this._playSlotAnimation(track, slot);
+        this._playSlotAnimation(track, index, slot);
       }
     });
+
+    // Store the longest duration for the current cycle
+    this.longestAnimationDuration = longestDuration;
 
     // Update sequence state
     this.sequence.playbackState.isPlaying = true;
@@ -179,7 +188,14 @@ export class PlaybackController {
       this.rafId = null;
     }
 
+    // Pause Spine animations by setting timeScale to 0
+    if (this.spineViewer && this.spineViewer.spine && this.spineViewer.spine.state) {
+      this._savedTimeScale = this.spineViewer.spine.state.timeScale;
+      this.spineViewer.spine.state.timeScale = 0;
+    }
+
     // Update sequence state
+    this.sequence.playbackState.isPlaying = false;
     this.sequence.playbackState.isPaused = true;
 
     console.log('  Paused successfully. New state:', {
@@ -213,6 +229,11 @@ export class PlaybackController {
     // Reset last timestamp to prevent large delta
     this.lastTimestamp = null;
 
+    // Restore Spine animations timeScale
+    if (this.spineViewer && this.spineViewer.spine && this.spineViewer.spine.state) {
+      this.spineViewer.spine.state.timeScale = this._savedTimeScale || 1.0;
+    }
+
     // Update sequence state
     this.sequence.playbackState.isPlaying = true;
     this.sequence.playbackState.isPaused = false;
@@ -234,6 +255,40 @@ export class PlaybackController {
   }
 
   /**
+   * Advance playback by one frame and pause
+   * Used for frame-by-frame stepping through animations
+   */
+  nextFrame() {
+    // Restore timeScale for all non-frozen tracks before advancing
+    if (this.spineViewer && this.spineViewer.spine && this.spineViewer.spine.state) {
+      // Restore state timeScale to 1
+      this.spineViewer.spine.state.timeScale = 1.0;
+
+      // Restore timeScale for each non-frozen track
+      this.sequence.tracks.forEach((track, index) => {
+        const trackState = this.trackStates.get(track.id);
+        if (trackState && !trackState.isFrozen) {
+          const trackEntry = this.spineViewer.spine.state.tracks[index];
+          if (trackEntry) {
+            trackEntry.timeScale = 1.0;
+          }
+        }
+      });
+    }
+
+    // If not playing, start playback first
+    if (!this.isPlaying && !this.isPaused) {
+      this.start();
+    } else if (this.isPaused) {
+      // Resume from paused state
+      this.resume();
+    }
+
+    // Set flag to pause after next frame
+    this._pauseAfterNextFrame = true;
+  }
+
+  /**
    * RAF tick callback - updates all track positions
    * @param {DOMHighResTimeStamp} timestamp - Current timestamp from RAF
    */
@@ -249,10 +304,27 @@ export class PlaybackController {
     // Update sequence playback state
     this.sequence.playbackState.currentTime = this.elapsedTime;
 
+    // Calculate time in current cycle
+    const cycleTime = this.elapsedTime - this.cycleStartTime;
+
+    // Check if the longest animation has completed
+    if (cycleTime >= this.longestAnimationDuration) {
+      // Restart all tracks for the next cycle
+      this._restartAllTracks(this.elapsedTime);
+      this.cycleStartTime = this.elapsedTime;
+    }
+
     // Update each track's playback position
-    this.sequence.tracks.forEach(track => {
-      this.updateTrackPlayback(track, this.elapsedTime);
+    this.sequence.tracks.forEach((track, index) => {
+      this.updateTrackPlayback(track, index, this.elapsedTime, cycleTime);
     });
+
+    // Check if we should pause after this frame (for nextFrame functionality)
+    if (this._pauseAfterNextFrame) {
+      this._pauseAfterNextFrame = false;
+      this.pause();
+      return;
+    }
 
     // Request next frame if still playing
     if (this.isPlaying) {
@@ -263,9 +335,11 @@ export class PlaybackController {
   /**
    * Update a single track's playback position
    * @param {AnimationTrack} track - Track to update
+   * @param {number} index - Track index
    * @param {number} globalTime - Global elapsed time in ms
+   * @param {number} cycleTime - Time elapsed in current cycle
    */
-  updateTrackPlayback(track, globalTime) {
+  updateTrackPlayback(track, index, globalTime, cycleTime) {
     const trackState = this.trackStates.get(track.id);
 
     // Initialize state if track was added during playback
@@ -284,11 +358,12 @@ export class PlaybackController {
         currentSlot: 0,
         slotStartTime: globalTime,
         animationDuration: animationDuration,
-        isLooping: false
+        isLooping: false,
+        isFrozen: false
       });
 
       if (!slot.isEmpty) {
-        this._playSlotAnimation(track, slot);
+        this._playSlotAnimation(track, index, slot);
       }
 
       return;
@@ -314,23 +389,30 @@ export class PlaybackController {
       return;
     }
 
-    // Calculate time in current slot
+    // Calculate time in current slot relative to when it started
     const timeInSlot = globalTime - trackState.slotStartTime;
 
-    // Check if animation duration has elapsed
-    if (timeInSlot >= trackState.animationDuration) {
-      // Advance to next slot
-      const nextSlotIndex = (trackState.currentSlot + 1) % track.slots.length;
+    // Update progress bar based on actual time in slot (capped at animation duration)
+    const progressTime = Math.min(timeInSlot, trackState.animationDuration);
+    this._updateTrackProgress(track.id, progressTime, trackState.animationDuration);
 
-      // Check if we're looping back to start
-      if (nextSlotIndex === 0) {
-        trackState.isLooping = true;
-        track.dispatchEvent(new CustomEvent('track-loop', {
-          detail: { trackId: track.id, timestamp: globalTime }
-        }));
+    // Check if this individual track's animation has completed
+    if (timeInSlot >= trackState.animationDuration && !trackState.isFrozen) {
+      // This track finished before the longest animation
+      // Freeze it at the last frame by setting timeScale to 0 for this track
+      trackState.isFrozen = true;
+
+      // Pause the Spine animation on this track by setting timeScale to 0
+      if (this.spineViewer && this.spineViewer.spine && this.spineViewer.spine.state) {
+        const trackEntry = this.spineViewer.spine.state.tracks[index];
+        if (trackEntry) {
+          trackEntry.timeScale = 0;
+          // Set to last frame
+          trackEntry.trackTime = trackEntry.animationEnd;
+        }
       }
 
-      this._advanceToSlot(track, trackState, nextSlotIndex, globalTime);
+      // Note: The global cycle restart happens in tick() when cycleTime >= longestAnimationDuration
     }
   }
 
@@ -439,22 +521,27 @@ export class PlaybackController {
 
   /**
    * Play animation for a slot
-   * @param {AnimationTrack} track 
-   * @param {AnimationSlot} slot 
+   * @param {AnimationTrack} track
+   * @param {number} index - Track index
+   * @param {AnimationSlot} slot
    * @private
    */
-  _playSlotAnimation(track, slot) {
+  _playSlotAnimation(track, index, slot) {
     if (!slot || !slot.animation) {
       return;
     }
 
     try {
+      // For single-slot tracks, enable looping. For multi-slot, disable to allow sequence advancement
+      const shouldLoop = track.slots.length === 1;
+
       // Use SpineViewer's setAnimation method (not playAnimation)
       if (typeof this.spineViewer.setAnimation === 'function') {
-        this.spineViewer.setAnimation(slot.animation, false); // false = don't loop individual slots
+        this.spineViewer.setAnimation(slot.animation, shouldLoop, index);
       } else if (this.spineViewer.spine && this.spineViewer.spine.state) {
         // Direct access to spine state as fallback
-        this.spineViewer.spine.state.setAnimation(0, slot.animation, false);
+        console.log(`play animation ${slot.animation} for track ${track.id}, loop: ${shouldLoop}`);
+        this.spineViewer.spine.state.setAnimation(index, slot.animation, shouldLoop);
       } else {
         console.warn(`Cannot play animation "${slot.animation}": SpineViewer not ready`);
       }
@@ -493,6 +580,89 @@ export class PlaybackController {
       return this.spineViewer.spine.state.timeScale || 1.0;
     }
     return 1.0;
+  }
+
+  /**
+   * Restart all tracks from the beginning
+   * Called when the longest animation completes to sync all animations
+   * @param {number} currentTime - Current global time
+   * @private
+   */
+  _restartAllTracks(currentTime) {
+    console.log('[Multi-Track] Restarting all tracks at time:', currentTime);
+
+    // Recalculate longest duration for the new cycle
+    let longestDuration = 0;
+
+    this.sequence.tracks.forEach((track, index) => {
+      const trackState = this.trackStates.get(track.id);
+
+      if (!trackState) return;
+
+      // Reset to slot 0
+      trackState.currentSlot = 0;
+      trackState.slotStartTime = currentTime;
+      trackState.isLooping = true;
+      trackState.isFrozen = false; // Unfreeze for new cycle
+
+      // Update track model
+      track.setCurrentSlot(0);
+
+      const slot = track.getSlot(0);
+      if (slot && !slot.isEmpty) {
+        // Update animation duration (in case animations changed)
+        trackState.animationDuration = this._getAnimationDuration(slot.animation);
+        longestDuration = Math.max(longestDuration, trackState.animationDuration);
+
+        // Unfreeze the Spine animation track by restoring timeScale
+        if (this.spineViewer && this.spineViewer.spine && this.spineViewer.spine.state) {
+          const trackEntry = this.spineViewer.spine.state.tracks[index];
+          if (trackEntry) {
+            trackEntry.timeScale = 1.0; // Restore normal playback speed
+          }
+        }
+
+        // Restart the animation
+        this._playSlotAnimation(track, index, slot);
+
+        // Reset progress bar
+        this._updateTrackProgress(track.id, 0, trackState.animationDuration);
+      }
+
+      // Emit position changed event
+      track.dispatchEvent(new CustomEvent('playback-position-changed', {
+        detail: {
+          trackId: track.id,
+          previousSlot: trackState.currentSlot,
+          currentSlot: 0,
+          timestamp: currentTime
+        }
+      }));
+    });
+
+    // Update longest duration for the new cycle
+    this.longestAnimationDuration = longestDuration;
+
+    // Emit a global restart event
+    this.sequence.dispatchEvent(new CustomEvent('all-tracks-restarted', {
+      detail: { timestamp: currentTime }
+    }));
+  }
+
+  /**
+   * Update track progress bar in the UI
+   * @param {string} trackId - Track ID
+   * @param {number} currentTime - Current time in slot (ms)
+   * @param {number} duration - Total duration of animation (ms)
+   * @private
+   */
+  _updateTrackProgress(trackId, currentTime, duration) {
+    const progressFill = document.querySelector(`.track-progress-fill[data-track-id="${trackId}"]`);
+
+    if (progressFill && duration > 0) {
+      const progress = Math.min((currentTime / duration) * 100, 100);
+      progressFill.style.width = `${progress}%`;
+    }
   }
 
   /**
